@@ -1,0 +1,33 @@
+COORDENADAS OFICIAIS - CAFETERIA 3D
+
+Sala: 12m x 8m x 3m
+1 unidade OpenGL ~= 1 metro
+
+X = -6.0 ate +6.0
+Y =  0.0 ate +3.0
+Z = -4.0 ate +4.0
+Origem = (0,0,0)
+
+Entrada principal:
+parede Z = +4.0
+centro X = 0.0
+largura = 1.4
+altura = 2.2
+
+Janela esquerda:
+X = -6.0
+Z = +0.5 ate +3.5
+Y = +0.8 ate +2.6
+
+Banheiro-base:
+X = +4.0 ate +6.0
+Z = -4.0 ate -2.0
+
+Placeholders:
+Balcao atendimento ~ (-0.6, 0.55, -2.45)
+Vitrine ~ (+3.0, 0.60, -2.45)
+Caixa ~ (+4.45, 0.55, -2.45)
+
+REGRA DA EQUIPE:
+Nao alterar as dimensoes globais da sala sem combinar com todos.
+Cada objeto deve ser modelado perto da origem local e depois posicionado com glTranslatef.
