@@ -431,7 +431,7 @@ Contém os diferentes objetos modelados para compor a cena.
 
 ---
 
-## Autores
+## Equipe
 
 - Leandro Marcio Elias da Silva
 - Daniel de Araujo Albuquerque
