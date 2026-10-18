@@ -15,6 +15,16 @@ static bool portaAberta = false;
 
 
 // ============================================================
+// PORTA DO BANHEIRO
+// ============================================================
+
+static float anguloPortaBanheiro = 0.0f;
+static float anguloAlvoPortaBanheiro = 0.0f;
+
+static bool portaBanheiroAberta = false;
+
+
+// ============================================================
 // CADEIRAS
 //
 // Indices:
@@ -100,12 +110,21 @@ static bool luzLigada = true;
 void inicializarInteracoes() {
 
     // ========================================================
-    // PORTA
+    // PORTA PRINCIPAL
     // ========================================================
 
     anguloPorta = 0.0f;
     anguloAlvoPorta = 0.0f;
     portaAberta = false;
+
+
+    // ========================================================
+    // PORTA DO BANHEIRO
+    // ========================================================
+
+    anguloPortaBanheiro = 0.0f;
+    anguloAlvoPortaBanheiro = 0.0f;
+    portaBanheiroAberta = false;
 
 
     // ========================================================
@@ -251,6 +270,72 @@ static void interagirComCadeira(
 
 
 // ============================================================
+// JOGADOR PERTO DA PORTA DO BANHEIRO
+// ============================================================
+
+bool jogadorPertoPortaBanheiro() {
+
+    float jogadorX =
+        obterCameraX();
+
+    float jogadorZ =
+        obterCameraZ();
+
+
+    // Centro aproximado do vao do banheiro.
+    const float portaX =
+        4.80f;
+
+    const float portaZ =
+       -2.05f;
+
+
+    float dx =
+        jogadorX - portaX;
+
+    float dz =
+        jogadorZ - portaZ;
+
+
+    const float distanciaMaxima =
+        1.15f;
+
+
+    return (
+        dx * dx +
+        dz * dz
+    ) <= (
+        distanciaMaxima *
+        distanciaMaxima
+    );
+}
+
+
+// ============================================================
+// ALTERNAR PORTA DO BANHEIRO
+// ============================================================
+
+void alternarPortaBanheiro() {
+
+    portaBanheiroAberta =
+        !portaBanheiroAberta;
+
+
+    if (portaBanheiroAberta) {
+
+        anguloAlvoPortaBanheiro =
+            90.0f;
+    }
+
+    else {
+
+        anguloAlvoPortaBanheiro =
+            0.0f;
+    }
+}
+
+
+// ============================================================
 // TENTAR INTERAGIR
 // ============================================================
 
@@ -261,6 +346,21 @@ void tentarInteragir() {
 
     float jogadorZ =
         obterCameraZ();
+
+
+    // ========================================================
+    // PORTA DO BANHEIRO
+    //
+    // Verificamos primeiro porque o jogador pode estar
+    // exatamente na entrada do banheiro.
+    // ========================================================
+
+    if (jogadorPertoPortaBanheiro()) {
+
+        alternarPortaBanheiro();
+
+        return;
+    }
 
 
     // ========================================================
@@ -344,7 +444,7 @@ void tentarInteragir() {
 void atualizarInteracoes() {
 
     // ========================================================
-    // PORTA
+    // PORTA PRINCIPAL
     // ========================================================
 
     const float velocidadePorta =
@@ -383,6 +483,53 @@ void atualizarInteracoes() {
 
             anguloPorta =
                 anguloAlvoPorta;
+        }
+    }
+
+
+    // ========================================================
+    // PORTA DO BANHEIRO
+    // ========================================================
+
+    const float velocidadePortaBanheiro =
+        2.5f;
+
+
+    if (
+        anguloPortaBanheiro <
+        anguloAlvoPortaBanheiro
+    ) {
+
+        anguloPortaBanheiro +=
+            velocidadePortaBanheiro;
+
+
+        if (
+            anguloPortaBanheiro >
+            anguloAlvoPortaBanheiro
+        ) {
+
+            anguloPortaBanheiro =
+                anguloAlvoPortaBanheiro;
+        }
+    }
+
+    else if (
+        anguloPortaBanheiro >
+        anguloAlvoPortaBanheiro
+    ) {
+
+        anguloPortaBanheiro -=
+            velocidadePortaBanheiro;
+
+
+        if (
+            anguloPortaBanheiro <
+            anguloAlvoPortaBanheiro
+        ) {
+
+            anguloPortaBanheiro =
+                anguloAlvoPortaBanheiro;
         }
     }
 
@@ -448,12 +595,22 @@ void atualizarInteracoes() {
 
 
 // ============================================================
-// PORTA
+// PORTA PRINCIPAL
 // ============================================================
 
 float obterAnguloPorta() {
 
     return anguloPorta;
+}
+
+
+// ============================================================
+// PORTA DO BANHEIRO
+// ============================================================
+
+float obterAnguloPortaBanheiro() {
+
+    return anguloPortaBanheiro;
 }
 
 

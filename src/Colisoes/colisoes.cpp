@@ -4,87 +4,65 @@
 
 
 // ============================================================
-// TAMANHO DA CAMERA
+// RAIO DA CAMERA
 //
-// A camera nao e tratada como apenas um ponto.
-// Consideramos um pequeno raio ao redor do jogador.
+// Trata o jogador como se ocupasse um pequeno circulo.
+// Isso evita que a camera encoste completamente nos objetos.
 // ============================================================
 
-static const float raioCamera = 0.20f;
+static const float RAIO_CAMERA = 0.20f;
 
 
 // ============================================================
 // COLISAO COM RETANGULO
 //
-// Verifica colisao no plano X/Z.
+// Verifica se a camera esta dentro de uma caixa no plano XZ.
+// O raio da camera e considerado automaticamente.
 // ============================================================
 
 static bool colideComCaixa(
-    float cameraX,
-    float cameraZ,
-
+    float x,
+    float z,
     float minX,
     float maxX,
-
     float minZ,
     float maxZ
 ) {
 
     return
-        cameraX + raioCamera > minX &&
-        cameraX - raioCamera < maxX &&
-        cameraZ + raioCamera > minZ &&
-        cameraZ - raioCamera < maxZ;
+        x + RAIO_CAMERA > minX &&
+        x - RAIO_CAMERA < maxX &&
+        z + RAIO_CAMERA > minZ &&
+        z - RAIO_CAMERA < maxZ;
 }
 
 
 // ============================================================
-// COLISAO COM CADEIRA
+// COLISAO COM PAREDES EXTERNAS
 // ============================================================
 
-static bool colideComCadeira(
-    float cameraX,
-    float cameraZ,
-
-    float cadeiraX,
-    float cadeiraZ
-) {
-
-    const float metadeCadeira = 0.32f;
-
-
-    return colideComCaixa(
-        cameraX,
-        cameraZ,
-
-        cadeiraX - metadeCadeira,
-        cadeiraX + metadeCadeira,
-
-        cadeiraZ - metadeCadeira,
-        cadeiraZ + metadeCadeira
-    );
-}
-
-
-// ============================================================
-// POSICAO VALIDA
-// ============================================================
-
-bool posicaoCameraValida(
+static bool colideComParedesExternas(
     float x,
     float z
 ) {
 
     // ========================================================
-    // PAREDES LATERAIS
+    // PAREDE ESQUERDA
     // ========================================================
 
     if (x < -5.75f) {
-        return false;
+
+        return true;
     }
 
+
+    // ========================================================
+    // PAREDE DIREITA
+    // ========================================================
+
     if (x > 5.75f) {
-        return false;
+
+        return true;
     }
 
 
@@ -93,103 +71,546 @@ bool posicaoCameraValida(
     // ========================================================
 
     if (z < -3.75f) {
-        return false;
+
+        return true;
     }
 
 
     // ========================================================
-    // PAREDE DA FRENTE + PORTA
+    // PAREDE DA FRENTE / PORTA PRINCIPAL
     //
-    // Parede frontal fica em Z = 4.
+    // A porta principal fica aproximadamente no centro.
     //
-    // Fora da abertura da porta:
-    // nunca pode passar.
+    // Quando a porta esta fechada:
+    // o jogador nao pode atravessar.
     //
-    // Dentro da abertura:
-    // so pode passar se a porta estiver aberta.
+    // Quando esta aberta:
+    // pode passar pelo vao.
     // ========================================================
 
     if (z > 3.75f) {
 
-        // Centro precisa estar dentro da abertura
-        // com uma margem para o raio da camera.
-        bool dentroDaPorta =
+        bool dentroDoVao =
             x > -0.45f &&
             x <  0.45f;
 
 
-        if (!dentroDaPorta) {
+        // Fora do vao existe parede.
+        if (!dentroDoVao) {
 
-            return false;
+            return true;
         }
 
 
-        // Consideramos a passagem liberada quando
-        // a porta ja abriu suficientemente.
-        bool portaLiberada =
-            obterAnguloPorta() >= 70.0f;
+        // Dentro do vao, mas a porta ainda esta fechada.
+        if (obterAnguloPorta() < 70.0f) {
 
-
-        if (!portaLiberada) {
-
-            return false;
+            return true;
         }
 
 
-        // Permite andar um pouco para fora da cafeteria,
-        // mas impede sair infinitamente pelo mundo.
+        // Limite externo.
+        //
+        // Permite sair um pouco pela porta,
+        // mas evita caminhar infinitamente para fora.
         if (z > 4.80f) {
 
-            return false;
+            return true;
         }
     }
 
 
+    return false;
+}
+
+
+// ============================================================
+// COLISAO COM PAREDES DO BANHEIRO
+//
+// Banheiro:
+//
+// X aproximadamente 3.6 ate 6.0
+// Z aproximadamente -4.0 ate -2.2
+//
+// A entrada fica na parede frontal.
+// ============================================================
+
+static bool colideComParedesBanheiro(
+    float x,
+    float z
+) {
+
     // ========================================================
-    // BANHEIRO
+    // PAREDE ESQUERDA DO BANHEIRO
     // ========================================================
 
+    if (
+        colideComCaixa(
+            x,
+            z,
 
-    // Parede lateral esquerda
-    if (colideComCaixa(
-        x, z,
+            3.52f,
+            3.68f,
 
-        3.50f,
-        3.70f,
+           -4.00f,
+           -2.15f
+        )
+    ) {
 
-       -4.00f,
-       -2.15f
-    )) {
+        return true;
+    }
+
+
+    // ========================================================
+    // PARTE ESQUERDA DA PAREDE FRONTAL
+    //
+    // Deixa livre o vao da porta.
+    // ========================================================
+
+    if (
+        colideComCaixa(
+            x,
+            z,
+
+            3.60f,
+            4.25f,
+
+           -2.28f,
+           -2.12f
+        )
+    ) {
+
+        return true;
+    }
+
+
+    // ========================================================
+    // PARTE DIREITA DA PAREDE FRONTAL
+    // ========================================================
+
+    if (
+        colideComCaixa(
+            x,
+            z,
+
+            5.33f,
+            6.00f,
+
+           -2.28f,
+           -2.12f
+        )
+    ) {
+
+        return true;
+    }
+
+
+    return false;
+}
+
+
+// ============================================================
+// PORTA DO BANHEIRO
+// ============================================================
+
+static bool colideComPortaBanheiro(
+    float x,
+    float z
+) {
+
+    // Quando ela esta praticamente aberta,
+    // liberamos completamente o vao.
+    if (obterAnguloPortaBanheiro() >= 70.0f) {
 
         return false;
     }
 
 
-    // Parede frontal esquerda
-    if (colideComCaixa(
-        x, z,
+    // Quando fechada, bloqueia o vao.
+    if (
+        colideComCaixa(
+            x,
+            z,
 
-        3.55f,
-        4.35f,
+            4.30f,
+            5.28f,
 
-       -2.30f,
-       -2.10f
-    )) {
+           -2.18f,
+           -2.04f
+        )
+    ) {
+
+        return true;
+    }
+
+
+    return false;
+}
+
+
+// ============================================================
+// COLISAO COM O BALCAO
+// ============================================================
+
+static bool colideComBalcao(
+    float x,
+    float z
+) {
+
+    return colideComCaixa(
+        x,
+        z,
+
+       -4.99f,
+       -2.21f,
+
+       -3.04f,
+       -2.26f
+    );
+}
+
+
+// ============================================================
+// COLISAO COM AS MESAS
+// ============================================================
+
+static bool colideComMesas(
+    float x,
+    float z
+) {
+
+    // ========================================================
+    // MESA ESQUERDA
+    // ========================================================
+
+    if (
+        colideComCaixa(
+            x,
+            z,
+
+           -3.65f,
+           -2.35f,
+
+            0.05f,
+            0.95f
+        )
+    ) {
+
+        return true;
+    }
+
+
+    // ========================================================
+    // MESA CENTRAL
+    // ========================================================
+
+    if (
+        colideComCaixa(
+            x,
+            z,
+
+           -0.65f,
+            0.65f,
+
+            0.05f,
+            0.95f
+        )
+    ) {
+
+        return true;
+    }
+
+
+    // ========================================================
+    // MESA DIREITA
+    // ========================================================
+
+    if (
+        colideComCaixa(
+            x,
+            z,
+
+            2.35f,
+            3.65f,
+
+            0.05f,
+            0.95f
+        )
+    ) {
+
+        return true;
+    }
+
+
+    return false;
+}
+
+
+// ============================================================
+// COLISAO COM UMA CADEIRA
+// ============================================================
+
+static bool colideComCadeira(
+    float jogadorX,
+    float jogadorZ,
+    float cadeiraX,
+    float cadeiraZ
+) {
+
+    const float metade =
+        0.32f;
+
+
+    return colideComCaixa(
+        jogadorX,
+        jogadorZ,
+
+        cadeiraX - metade,
+        cadeiraX + metade,
+
+        cadeiraZ - metade,
+        cadeiraZ + metade
+    );
+}
+
+
+// ============================================================
+// COLISAO COM TODAS AS CADEIRAS
+//
+// A colisao acompanha o movimento individual de cada cadeira.
+// ============================================================
+
+static bool colideComCadeiras(
+    float x,
+    float z
+) {
+
+    // ========================================================
+    // MESA ESQUERDA
+    // ========================================================
+
+    if (
+        colideComCadeira(
+            x,
+            z,
+
+           -3.0f,
+            1.2f +
+            obterDeslocamentoCadeira(0)
+        )
+    ) {
+
+        return true;
+    }
+
+
+    if (
+        colideComCadeira(
+            x,
+            z,
+
+           -3.0f,
+           -0.2f +
+            obterDeslocamentoCadeira(1)
+        )
+    ) {
+
+        return true;
+    }
+
+
+    // ========================================================
+    // MESA CENTRAL
+    // ========================================================
+
+    if (
+        colideComCadeira(
+            x,
+            z,
+
+            0.0f,
+            1.2f +
+            obterDeslocamentoCadeira(2)
+        )
+    ) {
+
+        return true;
+    }
+
+
+    if (
+        colideComCadeira(
+            x,
+            z,
+
+            0.0f,
+           -0.2f +
+            obterDeslocamentoCadeira(3)
+        )
+    ) {
+
+        return true;
+    }
+
+
+    // ========================================================
+    // MESA DIREITA
+    // ========================================================
+
+    if (
+        colideComCadeira(
+            x,
+            z,
+
+            3.0f,
+            1.2f +
+            obterDeslocamentoCadeira(4)
+        )
+    ) {
+
+        return true;
+    }
+
+
+    if (
+        colideComCadeira(
+            x,
+            z,
+
+            3.0f,
+           -0.2f +
+            obterDeslocamentoCadeira(5)
+        )
+    ) {
+
+        return true;
+    }
+
+
+    return false;
+}
+
+
+// ============================================================
+// COLISAO COM VASO SANITARIO
+// ============================================================
+
+static bool colideComVasoSanitario(
+    float x,
+    float z
+) {
+
+    // Vaso:
+    //
+    // centro aproximado:
+    // X = 4.25
+    // Z = -3.48
+
+    return colideComCaixa(
+        x,
+        z,
+
+        3.86f,
+        4.64f,
+
+       -3.84f,
+       -3.05f
+    );
+}
+
+
+// ============================================================
+// COLISAO COM PIA DO BANHEIRO
+// ============================================================
+
+static bool colideComPiaBanheiro(
+    float x,
+    float z
+) {
+
+    // A pia foi rotacionada -90 graus.
+    //
+    // Por isso a profundidade original passa
+    // a ocupar principalmente o eixo X,
+    // enquanto a largura ocupa o eixo Z.
+
+    return colideComCaixa(
+        x,
+        z,
+
+        5.34f,
+        5.90f,
+
+       -3.52f,
+       -2.58f
+    );
+}
+
+
+// ============================================================
+// POSICAO DA CAMERA E VALIDA?
+// ============================================================
+
+bool posicaoCameraValida(
+    float x,
+    float z
+) {
+
+    // ========================================================
+    // PAREDES EXTERNAS
+    // ========================================================
+
+    if (
+        colideComParedesExternas(
+            x,
+            z
+        )
+    ) {
 
         return false;
     }
 
 
-    // Parede frontal direita
-    if (colideComCaixa(
-        x, z,
+    // ========================================================
+    // PAREDES DO BANHEIRO
+    // ========================================================
 
-        5.25f,
-        6.00f,
+    if (
+        colideComParedesBanheiro(
+            x,
+            z
+        )
+    ) {
 
-       -2.30f,
-       -2.10f
-    )) {
+        return false;
+    }
+
+
+    // ========================================================
+    // PORTA DO BANHEIRO
+    // ========================================================
+
+    if (
+        colideComPortaBanheiro(
+            x,
+            z
+        )
+    ) {
+
+        return false;
+    }
+
+
+    // ========================================================
+    // BALCAO
+    // ========================================================
+
+    if (
+        colideComBalcao(
+            x,
+            z
+        )
+    ) {
 
         return false;
     }
@@ -199,170 +620,64 @@ bool posicaoCameraValida(
     // MESAS
     // ========================================================
 
-
-    // Mesa esquerda
-    if (colideComCaixa(
-        x, z,
-
-       -3.65f,
-       -2.35f,
-
-        0.05f,
-        0.95f
-    )) {
-
-        return false;
-    }
-
-
-    // Mesa central
-    if (colideComCaixa(
-        x, z,
-
-       -0.65f,
-        0.65f,
-
-        0.05f,
-        0.95f
-    )) {
-
-        return false;
-    }
-
-
-    // Mesa direita
-    if (colideComCaixa(
-        x, z,
-
-        2.35f,
-        3.65f,
-
-        0.05f,
-        0.95f
-    )) {
+    if (
+        colideComMesas(
+            x,
+            z
+        )
+    ) {
 
         return false;
     }
 
 
     // ========================================================
-    // CADEIRAS MOVEIS
-    //
-    // A colisao usa exatamente o mesmo deslocamento
-    // que o renderizador usa.
-    //
-    // Assim:
-    //
-    // cadeira move visualmente
-    //          +
-    // colisao move junto
+    // CADEIRAS
     // ========================================================
 
-
-    // --------------------------------------------------------
-    // CADEIRA 0
-    // Mesa esquerda / Z positivo
-    // --------------------------------------------------------
-
-    if (colideComCadeira(
-        x,
-        z,
-
-        -3.0f,
-         1.2f + obterDeslocamentoCadeira(0)
-    )) {
-
-        return false;
-    }
-
-
-    // --------------------------------------------------------
-    // CADEIRA 1
-    // Mesa esquerda / Z negativo
-    // --------------------------------------------------------
-
-    if (colideComCadeira(
-        x,
-        z,
-
-        -3.0f,
-        -0.2f + obterDeslocamentoCadeira(1)
-    )) {
-
-        return false;
-    }
-
-
-    // --------------------------------------------------------
-    // CADEIRA 2
-    // Mesa central / Z positivo
-    // --------------------------------------------------------
-
-    if (colideComCadeira(
-        x,
-        z,
-
-         0.0f,
-         1.2f + obterDeslocamentoCadeira(2)
-    )) {
-
-        return false;
-    }
-
-
-    // --------------------------------------------------------
-    // CADEIRA 3
-    // Mesa central / Z negativo
-    // --------------------------------------------------------
-
-    if (colideComCadeira(
-        x,
-        z,
-
-         0.0f,
-        -0.2f + obterDeslocamentoCadeira(3)
-    )) {
-
-        return false;
-    }
-
-
-    // --------------------------------------------------------
-    // CADEIRA 4
-    // Mesa direita / Z positivo
-    // --------------------------------------------------------
-
-    if (colideComCadeira(
-        x,
-        z,
-
-         3.0f,
-         1.2f + obterDeslocamentoCadeira(4)
-    )) {
-
-        return false;
-    }
-
-
-    // --------------------------------------------------------
-    // CADEIRA 5
-    // Mesa direita / Z negativo
-    // --------------------------------------------------------
-
-    if (colideComCadeira(
-        x,
-        z,
-
-         3.0f,
-        -0.2f + obterDeslocamentoCadeira(5)
-    )) {
+    if (
+        colideComCadeiras(
+            x,
+            z
+        )
+    ) {
 
         return false;
     }
 
 
     // ========================================================
-    // POSICAO LIVRE
+    // VASO SANITARIO
+    // ========================================================
+
+    if (
+        colideComVasoSanitario(
+            x,
+            z
+        )
+    ) {
+
+        return false;
+    }
+
+
+    // ========================================================
+    // PIA
+    // ========================================================
+
+    if (
+        colideComPiaBanheiro(
+            x,
+            z
+        )
+    ) {
+
+        return false;
+    }
+
+
+    // ========================================================
+    // LIVRE
     // ========================================================
 
     return true;

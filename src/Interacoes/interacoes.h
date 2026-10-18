@@ -13,6 +13,12 @@ void atualizarInteracoes();
 // Executa a interacao quando o jogador aperta E.
 void tentarInteragir();
 
+void alternarPortaBanheiro();
+
+float obterAnguloPortaBanheiro();
+
+bool jogadorPertoPortaBanheiro();
+
 
 // ============================================================
 // PORTA
