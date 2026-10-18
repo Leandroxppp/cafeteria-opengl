@@ -2,7 +2,66 @@
 
 #include <windows.h>
 #include <GL/gl.h>
+#include <cmath>
 
+
+// ============================================================
+// CALCULAR NORMAL DE UM QUAD
+// ============================================================
+
+static void calcularNormal(
+    float x1, float y1, float z1,
+    float x2, float y2, float z2,
+    float x3, float y3, float z3
+) {
+
+    // Vetor do ponto 1 para o ponto 2
+    float ux = x2 - x1;
+    float uy = y2 - y1;
+    float uz = z2 - z1;
+
+
+    // Vetor do ponto 1 para o ponto 3
+    float vx = x3 - x1;
+    float vy = y3 - y1;
+    float vz = z3 - z1;
+
+
+    // Produto vetorial
+    float nx = uy * vz - uz * vy;
+    float ny = uz * vx - ux * vz;
+    float nz = ux * vy - uy * vx;
+
+
+    // Comprimento da normal
+    float comprimento =
+        sqrt(
+            nx * nx +
+            ny * ny +
+            nz * nz
+        );
+
+
+    // Evita divisao por zero
+    if (comprimento > 0.0f) {
+
+        nx /= comprimento;
+        ny /= comprimento;
+        nz /= comprimento;
+    }
+
+
+    glNormal3f(
+        nx,
+        ny,
+        nz
+    );
+}
+
+
+// ============================================================
+// DESENHAR QUAD
+// ============================================================
 
 // Desenha uma superficie usando 4 pontos
 void desenharQuad(
@@ -14,20 +73,59 @@ void desenharQuad(
 ) {
 
     // Define a cor
-    glColor3f(r, g, b);
+    glColor3f(
+        r,
+        g,
+        b
+    );
 
-    glBegin(GL_QUADS);
 
-        glVertex3f(x1, y1, z1);
-        glVertex3f(x2, y2, z2);
-        glVertex3f(x3, y3, z3);
-        glVertex3f(x4, y4, z4);
+    glBegin(
+        GL_QUADS
+    );
+
+
+        // Calcula a normal da superficie
+        calcularNormal(
+            x1, y1, z1,
+            x2, y2, z2,
+            x3, y3, z3
+        );
+
+
+        glVertex3f(
+            x1,
+            y1,
+            z1
+        );
+
+        glVertex3f(
+            x2,
+            y2,
+            z2
+        );
+
+        glVertex3f(
+            x3,
+            y3,
+            z3
+        );
+
+        glVertex3f(
+            x4,
+            y4,
+            z4
+        );
+
 
     glEnd();
 }
 
 
-// Desenha uma caixa 3D
+// ============================================================
+// DESENHAR CAIXA
+// ============================================================
+
 void desenharCaixa(
     float centroX,
     float centroY,
@@ -40,54 +138,135 @@ void desenharCaixa(
     float b
 ) {
 
-    float x0 = centroX - tamanhoX / 2.0f;
-    float x1 = centroX + tamanhoX / 2.0f;
+    float x0 =
+        centroX - tamanhoX / 2.0f;
 
-    float y0 = centroY - tamanhoY / 2.0f;
-    float y1 = centroY + tamanhoY / 2.0f;
+    float x1 =
+        centroX + tamanhoX / 2.0f;
 
-    float z0 = centroZ - tamanhoZ / 2.0f;
-    float z1 = centroZ + tamanhoZ / 2.0f;
 
-    glColor3f(r, g, b);
+    float y0 =
+        centroY - tamanhoY / 2.0f;
 
-    glBegin(GL_QUADS);
+    float y1 =
+        centroY + tamanhoY / 2.0f;
 
-        // Frente
+
+    float z0 =
+        centroZ - tamanhoZ / 2.0f;
+
+    float z1 =
+        centroZ + tamanhoZ / 2.0f;
+
+
+    // Define a cor da caixa
+    glColor3f(
+        r,
+        g,
+        b
+    );
+
+
+    glBegin(
+        GL_QUADS
+    );
+
+
+        // ====================================================
+        // FRENTE
+        // ====================================================
+
+        glNormal3f(
+            0.0f,
+            0.0f,
+            1.0f
+        );
+
         glVertex3f(x0, y0, z1);
         glVertex3f(x1, y0, z1);
         glVertex3f(x1, y1, z1);
         glVertex3f(x0, y1, z1);
 
-        // Tras
+
+        // ====================================================
+        // TRAS
+        // ====================================================
+
+        glNormal3f(
+            0.0f,
+            0.0f,
+           -1.0f
+        );
+
         glVertex3f(x1, y0, z0);
         glVertex3f(x0, y0, z0);
         glVertex3f(x0, y1, z0);
         glVertex3f(x1, y1, z0);
 
-        // Esquerda
+
+        // ====================================================
+        // ESQUERDA
+        // ====================================================
+
+        glNormal3f(
+           -1.0f,
+            0.0f,
+            0.0f
+        );
+
         glVertex3f(x0, y0, z0);
         glVertex3f(x0, y0, z1);
         glVertex3f(x0, y1, z1);
         glVertex3f(x0, y1, z0);
 
-        // Direita
+
+        // ====================================================
+        // DIREITA
+        // ====================================================
+
+        glNormal3f(
+            1.0f,
+            0.0f,
+            0.0f
+        );
+
         glVertex3f(x1, y0, z1);
         glVertex3f(x1, y0, z0);
         glVertex3f(x1, y1, z0);
         glVertex3f(x1, y1, z1);
 
-        // Topo
+
+        // ====================================================
+        // TOPO
+        // ====================================================
+
+        glNormal3f(
+            0.0f,
+            1.0f,
+            0.0f
+        );
+
         glVertex3f(x0, y1, z1);
         glVertex3f(x1, y1, z1);
         glVertex3f(x1, y1, z0);
         glVertex3f(x0, y1, z0);
 
-        // Base
+
+        // ====================================================
+        // BASE
+        // ====================================================
+
+        glNormal3f(
+            0.0f,
+           -1.0f,
+            0.0f
+        );
+
         glVertex3f(x0, y0, z0);
         glVertex3f(x1, y0, z0);
         glVertex3f(x1, y0, z1);
         glVertex3f(x0, y0, z1);
+
 
     glEnd();
 }

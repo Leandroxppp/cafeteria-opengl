@@ -1,5 +1,17 @@
 #include "sala.h"
+
 #include "../Renderizacao/primitivas.h"
+#include "../Texturas/texturas.h"
+
+#include <windows.h>
+#include <GL/gl.h>
+
+
+// ============================================================
+// TEXTURA DO PISO
+// ============================================================
+
+static GLuint texturaPiso = 0;
 
 
 // ============================================================
@@ -8,14 +20,153 @@
 
 static void desenharChao() {
 
-    desenharQuad(
-        -6.0f, 0.0f, -4.0f,
-         6.0f, 0.0f, -4.0f,
-         6.0f, 0.0f,  4.0f,
-        -6.0f, 0.0f,  4.0f,
+    // Carrega a textura apenas uma vez
+    if (texturaPiso == 0) {
 
-        0.42f, 0.30f, 0.20f
-    );
+        texturaPiso =
+            carregarTexturaBMP(
+                "assets/texturas/piso.bmp"
+            );
+    }
+
+
+    // ========================================================
+    // PISO COM TEXTURA
+    // ========================================================
+
+    if (texturaPiso != 0) {
+
+        glEnable(GL_TEXTURE_2D);
+
+        glBindTexture(
+            GL_TEXTURE_2D,
+            texturaPiso
+        );
+
+
+        // Faz a textura repetir pelo piso
+        // em vez de esticar uma unica imagem.
+        glTexParameteri(
+            GL_TEXTURE_2D,
+            GL_TEXTURE_WRAP_S,
+            GL_REPEAT
+        );
+
+        glTexParameteri(
+            GL_TEXTURE_2D,
+            GL_TEXTURE_WRAP_T,
+            GL_REPEAT
+        );
+
+
+        // Branco para preservar as cores
+        // originais da textura.
+        glColor3f(
+            1.0f,
+            1.0f,
+            1.0f
+        );
+
+
+        glBegin(GL_QUADS);
+
+
+            // Normal apontando para cima
+            glNormal3f(
+                0.0f,
+                1.0f,
+                0.0f
+            );
+
+
+            // Canto traseiro esquerdo
+            glTexCoord2f(
+                0.0f,
+                0.0f
+            );
+
+            glVertex3f(
+                -6.0f,
+                 0.0f,
+                -4.0f
+            );
+
+
+            // Canto traseiro direito
+            //
+            // 6 repeticoes no eixo X
+            glTexCoord2f(
+                6.0f,
+                0.0f
+            );
+
+            glVertex3f(
+                 6.0f,
+                 0.0f,
+                -4.0f
+            );
+
+
+            // Canto frontal direito
+            //
+            // 4 repeticoes no eixo Z
+            glTexCoord2f(
+                6.0f,
+                4.0f
+            );
+
+            glVertex3f(
+                 6.0f,
+                 0.0f,
+                 4.0f
+            );
+
+
+            // Canto frontal esquerdo
+            glTexCoord2f(
+                0.0f,
+                4.0f
+            );
+
+            glVertex3f(
+                -6.0f,
+                 0.0f,
+                 4.0f
+            );
+
+
+        glEnd();
+
+
+        glBindTexture(
+            GL_TEXTURE_2D,
+            0
+        );
+
+        glDisable(GL_TEXTURE_2D);
+    }
+
+
+    // ========================================================
+    // PISO SEM TEXTURA
+    //
+    // Caso o arquivo piso.bmp nao seja encontrado,
+    // usa a cor antiga como seguranca.
+    // ========================================================
+
+    else {
+
+        desenharQuad(
+            -6.0f, 0.0f, -4.0f,
+             6.0f, 0.0f, -4.0f,
+             6.0f, 0.0f,  4.0f,
+            -6.0f, 0.0f,  4.0f,
+
+            0.42f,
+            0.30f,
+            0.20f
+        );
+    }
 }
 
 
@@ -179,16 +330,8 @@ static void desenharParedeFrente() {
 //
 // Canto traseiro direito.
 //
-// Usa a parede do fundo e a parede direita da cafeteria.
-//
-// Area aproximada:
-//
-// X = 3.6 ate 6.0  -> 2.4 m
-// Z = -4.0 ate -2.2 -> 1.8 m
-//
-// Porta:
-// largura = 0.9 m
-// altura = 2.1 m
+// X = 3.6 ate 6.0
+// Z = -4.0 ate -2.2
 // ============================================================
 
 static void desenharBanheiro() {
@@ -198,36 +341,20 @@ static void desenharBanheiro() {
     const float corB = 0.52f;
 
 
-    // ========================================================
-    // PAREDE LATERAL ESQUERDA
-    //
-    // Separa o banheiro da cafeteria.
-    // ========================================================
-
+    // Parede lateral esquerda
     desenharCaixa(
-        3.60f,     // X
-        1.50f,     // Y
-       -3.10f,     // Z
+        3.60f,
+        1.50f,
+       -3.10f,
 
-        0.10f,     // largura
-        3.00f,     // altura
-        1.80f,     // profundidade
+        0.10f,
+        3.00f,
+        1.80f,
 
         corR,
         corG,
         corB
     );
-
-
-    // ========================================================
-    // PAREDE FRONTAL
-    //
-    // A porta fica no meio:
-    //
-    // X = 4.35 ate 5.25
-    //
-    // largura da porta = 0.90 m
-    // ========================================================
 
 
     // Parte esquerda da porta
@@ -262,15 +389,7 @@ static void desenharBanheiro() {
     );
 
 
-    // ========================================================
-    // PARTE ACIMA DA PORTA
-    //
-    // Porta tem 2.1 m.
-    // Sala tem 3 m.
-    //
-    // Sobram 0.9 m acima.
-    // ========================================================
-
+    // Parte acima da porta
     desenharCaixa(
         4.80f,
         2.55f,

@@ -3,7 +3,9 @@
 #include "Janela/janela.h"
 #include "Camera/camera.h"
 #include "Controles/controles.h"
+#include "Interacoes/interacoes.h"
 #include "Renderizacao/renderizador.h"
+
 
 int WINAPI WinMain(
     HINSTANCE hInstance,
@@ -12,54 +14,94 @@ int WINAPI WinMain(
     int nCmdShow
 ) {
 
-    // Inicializa teclado
+    // ========================================================
+    // INICIALIZACAO
+    // ========================================================
+
+    // Inicializa teclado e controles
     inicializarControles();
+
 
     // Coloca a camera na posicao inicial
     inicializarCamera();
 
+
+    // Inicializa as interacoes
+    // Porta começa fechada
+    inicializarInteracoes();
+
+
     // Cria a janela e inicia o OpenGL
-    if (!criarJanela(hInstance, nCmdShow)) {
+    if (!criarJanela(
+        hInstance,
+        nCmdShow
+    )) {
+
         return 1;
     }
 
 
+    // ========================================================
+    // LOOP PRINCIPAL
+    // ========================================================
+
     bool executando = true;
 
 
-    // Loop principal do programa
     while (executando) {
 
-        // Processa teclado, fechamento da janela etc.
-        executando = processarEventos();
+        // ----------------------------------------------------
+        // EVENTOS
+        // ----------------------------------------------------
+
+        executando =
+            processarEventos();
 
 
-        // Se o programa recebeu ordem para fechar,
-        // sai do loop imediatamente
         if (!executando) {
             break;
         }
 
 
-        // Atualiza W A S D
+        // ----------------------------------------------------
+        // CONTROLES
+        // ----------------------------------------------------
+
         atualizarControles();
 
 
-        // Desenha a cafeteria
+        // ----------------------------------------------------
+        // INTERACOES
+        //
+        // Atualiza a animacao da porta.
+        // ----------------------------------------------------
+
+        atualizarInteracoes();
+
+
+        // ----------------------------------------------------
+        // DESENHAR CENA
+        // ----------------------------------------------------
+
         renderizarCena();
 
 
-        // Exibe o frame
+        // ----------------------------------------------------
+        // MOSTRAR FRAME
+        // ----------------------------------------------------
+
         atualizarJanela();
 
 
-        // Limita aproximadamente a 60 FPS.
-        // Isso também evita a movimentacao ficar absurdamente rapida.
+        // Aproximadamente 60 FPS
         Sleep(16);
     }
 
 
-    // Libera OpenGL e a janela
+    // ========================================================
+    // FINALIZACAO
+    // ========================================================
+
     destruirJanela();
 
 

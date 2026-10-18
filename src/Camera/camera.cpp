@@ -1,5 +1,7 @@
 #include "camera.h"
 
+#include "../Colisoes/colisoes.h"
+
 #include <GL/gl.h>
 #include <cmath>
 
@@ -8,7 +10,9 @@
 // DADOS DA CAMERA
 // ============================================================
 
-static float cameraX = 0.0f;
+// Comeca em um corredor livre,
+// evitando nascer encostado em cadeira/mesa.
+static float cameraX = 1.50f;
 static float cameraY = 1.65f;
 static float cameraZ = 3.0f;
 
@@ -19,16 +23,69 @@ static const float PI = 3.14159265f;
 
 
 // ============================================================
-// LIMITES DA CAFETERIA
+// MOVIMENTO COM COLISAO
+//
+// Primeiro tenta mover normalmente.
+//
+// Se houver colisao:
+// tenta mover apenas em X
+// e depois apenas em Z.
+//
+// Isso permite deslizar pelas paredes e objetos.
 // ============================================================
 
-static void limitarCamera() {
+static void tentarMover(
+    float deslocamentoX,
+    float deslocamentoZ
+) {
 
-    if (cameraX < -5.7f) cameraX = -5.7f;
-    if (cameraX >  5.7f) cameraX =  5.7f;
+    float novoX =
+        cameraX + deslocamentoX;
 
-    if (cameraZ < -3.7f) cameraZ = -3.7f;
-    if (cameraZ >  3.7f) cameraZ =  3.7f;
+    float novoZ =
+        cameraZ + deslocamentoZ;
+
+
+    // ========================================================
+    // TENTA MOVIMENTO COMPLETO
+    // ========================================================
+
+    if (posicaoCameraValida(
+        novoX,
+        novoZ
+    )) {
+
+        cameraX = novoX;
+        cameraZ = novoZ;
+
+        return;
+    }
+
+
+    // ========================================================
+    // TENTA APENAS X
+    // ========================================================
+
+    if (posicaoCameraValida(
+        novoX,
+        cameraZ
+    )) {
+
+        cameraX = novoX;
+    }
+
+
+    // ========================================================
+    // TENTA APENAS Z
+    // ========================================================
+
+    if (posicaoCameraValida(
+        cameraX,
+        novoZ
+    )) {
+
+        cameraZ = novoZ;
+    }
 }
 
 
@@ -38,12 +95,13 @@ static void limitarCamera() {
 
 void inicializarCamera() {
 
-    cameraX = 0.0f;
+    // Posicao inicial em area livre
+    cameraX = 1.50f;
     cameraY = 1.65f;
     cameraZ = 3.0f;
 
-    // Comeca olhando para -Z,
-    // ou seja, para dentro da cafeteria
+
+    // Comeca olhando para dentro da cafeteria
     yaw = 0.0f;
     pitch = 0.0f;
 }
@@ -62,12 +120,14 @@ void aplicarCamera() {
         0.0f
     );
 
+
     glRotatef(
         -yaw,
         0.0f,
         1.0f,
         0.0f
     );
+
 
     glTranslatef(
         -cameraX,
@@ -81,20 +141,27 @@ void aplicarCamera() {
 // W - FRENTE
 // ============================================================
 
-void moverCameraFrente(float distancia) {
+void moverCameraFrente(
+    float distancia
+) {
 
     float angulo =
         yaw * PI / 180.0f;
 
-    // Movimento acompanha exatamente
-    // a direcao para onde a camera olha
-    cameraX -=
-        sinf(angulo) * distancia;
 
-    cameraZ -=
-        cosf(angulo) * distancia;
+    float deslocamentoX =
+        -sinf(angulo) *
+        distancia;
 
-    limitarCamera();
+    float deslocamentoZ =
+        -cosf(angulo) *
+        distancia;
+
+
+    tentarMover(
+        deslocamentoX,
+        deslocamentoZ
+    );
 }
 
 
@@ -102,18 +169,27 @@ void moverCameraFrente(float distancia) {
 // S - TRAS
 // ============================================================
 
-void moverCameraTras(float distancia) {
+void moverCameraTras(
+    float distancia
+) {
 
     float angulo =
         yaw * PI / 180.0f;
 
-    cameraX +=
-        sinf(angulo) * distancia;
 
-    cameraZ +=
-        cosf(angulo) * distancia;
+    float deslocamentoX =
+        sinf(angulo) *
+        distancia;
 
-    limitarCamera();
+    float deslocamentoZ =
+        cosf(angulo) *
+        distancia;
+
+
+    tentarMover(
+        deslocamentoX,
+        deslocamentoZ
+    );
 }
 
 
@@ -121,18 +197,27 @@ void moverCameraTras(float distancia) {
 // A - ESQUERDA
 // ============================================================
 
-void moverCameraEsquerda(float distancia) {
+void moverCameraEsquerda(
+    float distancia
+) {
 
     float angulo =
         yaw * PI / 180.0f;
 
-    cameraX -=
-        cosf(angulo) * distancia;
 
-    cameraZ +=
-        sinf(angulo) * distancia;
+    float deslocamentoX =
+        -cosf(angulo) *
+        distancia;
 
-    limitarCamera();
+    float deslocamentoZ =
+        sinf(angulo) *
+        distancia;
+
+
+    tentarMover(
+        deslocamentoX,
+        deslocamentoZ
+    );
 }
 
 
@@ -140,18 +225,27 @@ void moverCameraEsquerda(float distancia) {
 // D - DIREITA
 // ============================================================
 
-void moverCameraDireita(float distancia) {
+void moverCameraDireita(
+    float distancia
+) {
 
     float angulo =
         yaw * PI / 180.0f;
 
-    cameraX +=
-        cosf(angulo) * distancia;
 
-    cameraZ -=
-        sinf(angulo) * distancia;
+    float deslocamentoX =
+        cosf(angulo) *
+        distancia;
 
-    limitarCamera();
+    float deslocamentoZ =
+        -sinf(angulo) *
+        distancia;
+
+
+    tentarMover(
+        deslocamentoX,
+        deslocamentoZ
+    );
 }
 
 
@@ -164,24 +258,34 @@ void rotacionarCamera(
     float deltaY
 ) {
 
-    const float sensibilidade = 0.10f;
+    const float sensibilidade =
+        0.10f;
 
-    // Mouse direita = olha direita
-    // Mouse esquerda = olha esquerda
+
+    // Mouse para direita
     yaw -=
-        deltaX * sensibilidade;
+        deltaX *
+        sensibilidade;
 
-    // Mouse cima = olha cima
-    // Mouse baixo = olha baixo
+
+    // Mouse para cima/baixo
     pitch -=
-        deltaY * sensibilidade;
+        deltaY *
+        sensibilidade;
 
+
+    // ========================================================
+    // LIMITAR VISAO VERTICAL
+    // ========================================================
 
     if (pitch > 85.0f) {
+
         pitch = 85.0f;
     }
 
+
     if (pitch < -85.0f) {
+
         pitch = -85.0f;
     }
 }
@@ -192,13 +296,18 @@ void rotacionarCamera(
 // ============================================================
 
 float obterCameraX() {
+
     return cameraX;
 }
 
+
 float obterCameraY() {
+
     return cameraY;
 }
 
+
 float obterCameraZ() {
+
     return cameraZ;
 }
