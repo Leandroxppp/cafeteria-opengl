@@ -361,7 +361,7 @@ Além do método manual com `g++` apresentado abaixo, o projeto também pode ser
 
 - CMake 3.20 ou superior;
 - MinGW-w64 / GCC com `g++`;
-- Ninja (opcional, recomendado para este exemplo).
+- Ninja (opcional).
 
 Verifique as ferramentas:
 
