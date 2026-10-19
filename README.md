@@ -327,26 +327,43 @@ cafeteria-opengl/
 │       ├── Vitrine/
 │       └── Xicara/
 │
-├── CMakeLists.txt
-├── README.md
-└── build/                 # Gerado pelo CMake (não precisa ser versionado)
+├── CMakeLists.txt          # Opcional: compilação via CMake
+├── Cafeteria3D.exe
+└── README.md
 ```
 
 ---
 
 ## Requisitos para compilação
 
-O projeto utiliza **C++**, **OpenGL** e a API **Win32** para criar a janela. A compilação é gerenciada pelo **CMake**, permitindo configurar o projeto em IDEs como CLion e também compilar pelo terminal.
+O projeto foi desenvolvido no Windows utilizando:
 
-### Ferramentas necessárias
+- C++;
+- OpenGL;
+- Win32;
+- MinGW / g++.
 
-- **CMake** 3.20 ou superior;
-- compilador C++ compatível com C++ (por exemplo, MinGW-w64/GCC ou MSVC);
-- **OpenGL** — normalmente disponibilizado pelo sistema no Windows;
-- **Windows SDK** ou ambiente MinGW com as bibliotecas Win32;
-- **Ninja** (opcional, mas recomendado para builds com MinGW e CLion).
+O compilador `g++` deve estar configurado no PATH do Windows.
 
-Verifique as ferramentas no terminal:
+Para verificar:
+
+```powershell
+g++ --version
+```
+
+---
+
+## Como compilar com CMake (alternativa)
+
+Além do método manual com `g++` apresentado abaixo, o projeto também pode ser compilado com **CMake**. Os dois métodos ficam disponíveis; escolha o que preferir.
+
+### Requisitos para CMake
+
+- CMake 3.20 ou superior;
+- MinGW-w64 / GCC com `g++`;
+- Ninja (opcional, recomendado para este exemplo).
+
+Verifique as ferramentas:
 
 ```powershell
 cmake --version
@@ -354,97 +371,19 @@ g++ --version
 ninja --version
 ```
 
-`ninja --version` só é necessário se você optar pelo gerador Ninja. Se usar o MSVC, verifique o compilador no terminal de desenvolvedor do Visual Studio.
+### Criar o `CMakeLists.txt`
 
-### Dependências do projeto
-
-O executável usa as bibliotecas de sistema `opengl32` e `gdi32`. A opção `-mwindows`, usada anteriormente no comando direto do `g++`, corresponde ao modo de aplicação gráfica do MinGW. No CMake, isso pode ser configurado como uma opção de link específica do compilador.
-
-> **Importante:** este README considera que o código-fonte usa a API Win32 e OpenGL tradicional, conforme o comando de compilação anterior. Se o projeto também depender de bibliotecas externas não listadas nesse comando, elas deverão ser adicionadas ao `CMakeLists.txt`.
-
----
-
-## Como compilar com CMake
-
-Execute os comandos a seguir a partir da pasta raiz do projeto, onde estará o arquivo `CMakeLists.txt`.
-
-### 1. Configurar o projeto
-
-Com MinGW e Ninja:
-
-```powershell
-cmake -S . -B build -G Ninja -DCMAKE_CXX_COMPILER=g++
-```
-
-Se o compilador já estiver configurado no ambiente, também é possível usar:
-
-```powershell
-cmake -S . -B build
-```
-
-### 2. Compilar
-
-```powershell
-cmake --build build
-```
-
-### 3. Executar
-
-O executável será gerado dentro da pasta `build`:
-
-```powershell
-.\build\Cafeteria3D.exe
-```
-
-O caminho exato pode variar conforme o gerador e a configuração utilizada. Com geradores multi-configuração, como Visual Studio, o executável pode ficar em `build\Debug` ou `build\Release`.
-
-### Compilar em modo Release
-
-```powershell
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++
-cmake --build build
-```
-
-### Limpar a compilação
-
-Para refazer a configuração do zero, remova a pasta `build` e execute novamente os comandos de configuração:
-
-```powershell
-Remove-Item -Recurse -Force build
-cmake -S . -B build -G Ninja -DCMAKE_CXX_COMPILER=g++
-cmake --build build
-```
-
-> Apagar `build` remove apenas os arquivos gerados pela compilação, desde que você não tenha armazenado arquivos próprios nessa pasta.
-
----
-
-## Configuração no CLion
-
-1. Abra no CLion a pasta raiz do projeto, que contém `CMakeLists.txt`.
-2. Em **Settings > Build, Execution, Deployment > CMake**, selecione um perfil com o compilador instalado.
-3. Aguarde o CLion configurar o projeto.
-4. Selecione o alvo `Cafeteria3D` e clique em **Run** ou **Build**.
-
-Se o CLion não encontrar o compilador, configure um toolchain com MinGW ou Visual Studio. O CMake precisa conseguir localizar o compilador e as ferramentas de build.
-
----
-
-## Arquivo `CMakeLists.txt`
-
-Crie um arquivo chamado `CMakeLists.txt` na raiz do projeto, com o seguinte conteúdo. A lista de arquivos-fonte abaixo corresponde ao comando de compilação documentado neste README; confira se os caminhos e nomes coincidem exatamente com os arquivos existentes no seu repositório.
+Crie um arquivo `CMakeLists.txt` na raiz do projeto com o conteúdo abaixo. Os caminhos devem corresponder aos arquivos existentes no projeto.
 
 ```cmake
 cmake_minimum_required(VERSION 3.20)
 
 project(Cafeteria3D LANGUAGES CXX)
 
-# Ajuste o padrão conforme a versão de C++ usada pelo código.
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Arquivos-fonte do projeto.
 set(PROJECT_SOURCES
     src/main.cpp
     src/Janela/janela.cpp
@@ -479,23 +418,19 @@ set(PROJECT_SOURCES
 
 add_executable(Cafeteria3D WIN32 ${PROJECT_SOURCES})
 
-# Cabeçalhos do projeto podem ser incluídos a partir de src/.
 target_include_directories(Cafeteria3D PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
 )
 
-# Bibliotecas de sistema necessárias no Windows.
 if(WIN32)
     target_link_libraries(Cafeteria3D PRIVATE opengl32 gdi32)
 
-    # Equivalente ao -mwindows no MinGW: não abrir um console separado.
     if(MINGW)
         target_link_options(Cafeteria3D PRIVATE -mwindows)
     endif()
 endif()
 
-# Copia os recursos para a pasta do executável após a compilação,
-# mantendo o caminho relativo assets/texturas/ esperado pelo programa.
+# Copia os recursos para perto do executável, preservando assets/texturas/.
 add_custom_command(TARGET Cafeteria3D POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${CMAKE_CURRENT_SOURCE_DIR}/assets"
@@ -504,17 +439,65 @@ add_custom_command(TARGET Cafeteria3D POST_BUILD
 )
 ```
 
-### Observações sobre o `CMakeLists.txt`
+### Configurar e compilar com CMake
 
-- O exemplo usa C++17. Se o projeto exigir outro padrão, altere `CMAKE_CXX_STANDARD`.
-- `WIN32` no `add_executable` configura uma aplicação gráfica no Windows. A opção `-mwindows` é mantida para MinGW por compatibilidade com o comando antigo; caso sua configuração apresente conflito, teste removê-la.
-- Os nomes e caminhos dos arquivos são sensíveis à existência real dos arquivos no repositório. Se um caminho estiver diferente, o CMake informará que o arquivo não foi encontrado.
-- A cópia de `assets` garante que as texturas continuem acessíveis quando o programa for iniciado a partir da pasta de build. O código deve carregar as texturas por caminhos relativos, como `assets/texturas/piso.bmp`.
-- Se houver arquivos `.c`, acrescente-os à lista e habilite a linguagem C no projeto (`LANGUAGES C CXX`) conforme necessário.
+Execute os comandos a partir da pasta raiz do projeto:
+
+```powershell
+cmake -S . -B build -G Ninja -DCMAKE_CXX_COMPILER=g++
+cmake --build build
+```
+
+Para executar a versão compilada:
+
+```powershell
+.\build\Cafeteria3D.exe
+```
+
+Para uma compilação Release:
+
+```powershell
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++
+cmake --build build
+```
+
+### Usar no CLion
+
+1. Abra a pasta raiz do projeto no CLion.
+2. Certifique-se de que o `CMakeLists.txt` esteja na raiz.
+3. Configure um toolchain com MinGW ou outro compilador C++ compatível.
+4. Aguarde a configuração do CMake e compile/executa o alvo `Cafeteria3D`.
+
+> **Observação:** este método é adicional. O comando manual com `g++` continua disponível na seção seguinte. O CMake também precisa que os caminhos e nomes dos arquivos correspondam à estrutura real do projeto.
+
+---
+
+## Como compilar manualmente com g++
+
+Abra o PowerShell na pasta raiz do projeto e execute:
+
+```powershell
+g++ src\main.cpp src\Janela\janela.cpp src\Camera\camera.cpp src\Controles\controles.cpp src\Colisoes\colisoes.cpp src\Interacoes\interacoes.cpp src\Renderizacao\primitivas.cpp src\Renderizacao\renderizador.cpp src\Texturas\texturas.cpp src\Sala\sala.cpp src\Objetos\Mesa\mesa.cpp src\Objetos\Cadeira\cadeira.cpp src\Objetos\Porta\porta.cpp src\Objetos\PortaBanheiro\porta_banheiro.cpp src\Objetos\Menu\menu.cpp src\Objetos\Interruptor\interruptor.cpp src\Objetos\PortaGuardanapos\porta_guardanapos.cpp src\Objetos\Xicara\xicara.cpp src\Objetos\Vasinho\vasinho.cpp src\Objetos\Balcao\balcao.cpp src\Objetos\Vitrine\vitrine.cpp src\Objetos\Registradora\registradora.cpp src\Objetos\MaquinaCafe\maquina_cafe.cpp src\Objetos\Luminaria\luminaria.cpp src\Objetos\JanelaCafe\janela_cafe.cpp src\Objetos\Prateleira\prateleira.cpp src\Objetos\VasoSanitario\vaso_sanitario.cpp src\Objetos\PiaBanheiro\pia_banheiro.cpp src\Objetos\EspelhoBanheiro\espelho_banheiro.cpp -o Cafeteria3D.exe -lopengl32 -lgdi32 -mwindows
+```
+
+Se a compilação terminar sem erros, o executável será criado na pasta principal:
+
+```text
+Cafeteria3D.exe
+```
 
 ---
 
 ## Como executar
+
+No PowerShell:
+
+```powershell
+.\Cafeteria3D.exe
+```
+
+---
+
 ## Organização do código
 
 ### `Camera`
