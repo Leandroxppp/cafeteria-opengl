@@ -368,96 +368,28 @@ Verifique as ferramentas:
 ```powershell
 cmake --version
 g++ --version
-ninja --version
 ```
 
-### Criar o `CMakeLists.txt`
-
-Crie um arquivo `CMakeLists.txt` na raiz do projeto com o conteúdo abaixo. Os caminhos devem corresponder aos arquivos existentes no projeto.
-
-```cmake
-cmake_minimum_required(VERSION 3.20)
-
-project(Cafeteria3D LANGUAGES CXX)
-
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
-set(PROJECT_SOURCES
-    src/main.cpp
-    src/Janela/janela.cpp
-    src/Camera/camera.cpp
-    src/Controles/controles.cpp
-    src/Colisoes/colisoes.cpp
-    src/Interacoes/interacoes.cpp
-    src/Renderizacao/primitivas.cpp
-    src/Renderizacao/renderizador.cpp
-    src/Texturas/texturas.cpp
-    src/Sala/sala.cpp
-    src/Objetos/Mesa/mesa.cpp
-    src/Objetos/Cadeira/cadeira.cpp
-    src/Objetos/Porta/porta.cpp
-    src/Objetos/PortaBanheiro/porta_banheiro.cpp
-    src/Objetos/Menu/menu.cpp
-    src/Objetos/Interruptor/interruptor.cpp
-    src/Objetos/PortaGuardanapos/porta_guardanapos.cpp
-    src/Objetos/Xicara/xicara.cpp
-    src/Objetos/Vasinho/vasinho.cpp
-    src/Objetos/Balcao/balcao.cpp
-    src/Objetos/Vitrine/vitrine.cpp
-    src/Objetos/Registradora/registradora.cpp
-    src/Objetos/MaquinaCafe/maquina_cafe.cpp
-    src/Objetos/Luminaria/luminaria.cpp
-    src/Objetos/JanelaCafe/janela_cafe.cpp
-    src/Objetos/Prateleira/prateleira.cpp
-    src/Objetos/VasoSanitario/vaso_sanitario.cpp
-    src/Objetos/PiaBanheiro/pia_banheiro.cpp
-    src/Objetos/EspelhoBanheiro/espelho_banheiro.cpp
-)
-
-add_executable(Cafeteria3D WIN32 ${PROJECT_SOURCES})
-
-target_include_directories(Cafeteria3D PRIVATE
-    "${CMAKE_CURRENT_SOURCE_DIR}/src"
-)
-
-if(WIN32)
-    target_link_libraries(Cafeteria3D PRIVATE opengl32 gdi32)
-
-    if(MINGW)
-        target_link_options(Cafeteria3D PRIVATE -mwindows)
-    endif()
-endif()
-
-# Copia os recursos para perto do executável, preservando assets/texturas/.
-add_custom_command(TARGET Cafeteria3D POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${CMAKE_CURRENT_SOURCE_DIR}/assets"
-            "$<TARGET_FILE_DIR:Cafeteria3D>/assets"
-    COMMENT "Copiando assets para a pasta do executável"
-)
-```
 
 ### Configurar e compilar com CMake
 
 Execute os comandos a partir da pasta raiz do projeto:
 
 ```powershell
-cmake -S . -B build -G Ninja -DCMAKE_CXX_COMPILER=g++
+cmake -S . -B build -G "MinGW Makefiles"
 cmake --build build
 ```
 
 Para executar a versão compilada:
 
 ```powershell
-.\build\Cafeteria3D.exe
+.\build\cafeteria_opengl.exe
 ```
 
 Para uma compilação Release:
 
 ```powershell
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++
+cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 ```
 
