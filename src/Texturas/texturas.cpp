@@ -2,57 +2,45 @@
 
 #include <GL/gl.h>
 
-// Alguns headers antigos do OpenGL nao possuem
-// essas constantes.
-#ifndef GL_BGR_EXT
-#define GL_BGR_EXT 0x80E0
-#endif
-
-#ifndef GL_BGRA_EXT
-#define GL_BGRA_EXT 0x80E1
-#endif
-
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+// Funcao para carregar a textura
+GLuint carregarTexturaBMP(const char* caminho) {
 
-// ============================================================
-// CARREGAR TEXTURA BMP
-// ============================================================
+    int largura;
+    int altura;
+    int canaisDeCor;
 
-GLuint carregarTexturaBMP(
-    const char* caminho
-) {
+    // Voce passa o caminho da imagem e ele retorna o local dos pixel e preeche a largura, altura e quantidade de canais da imagem passada
+    unsigned char* dados = stbi_load(caminho, &largura, &altura, &canaisDeCor, 0);
 
-    
-
-
+    if (!dados) {
+        return 0;
+    }
    
 
-    
 
-
-   
-
-    // ========================================================
-    // CRIAR TEXTURA OPENGL
-    // ========================================================
+    // configuracao de textura
 
     GLuint textura = 0;
 
+    // gera uma quantidade X de identificador(es), nesse caso, gera apenas 1
     glGenTextures(
         1,
         &textura
     );
 
-
+    // a textura que estamos lidando, textura, é do tipo 2d
     glBindTexture(
         GL_TEXTURE_2D,
         textura
     );
 
 
-    // Filtro quando a textura estiver pequena.
+    // filtro quando for necessario mapear a textura para um tamanho inferior ao dela
+    // filtro de interpolacao linear
+    // textura do tipo 2d
     glTexParameteri(
         GL_TEXTURE_2D,
         GL_TEXTURE_MIN_FILTER,
@@ -60,7 +48,7 @@ GLuint carregarTexturaBMP(
     );
 
 
-    // Filtro quando a textura estiver ampliada.
+    // filtro quando for necessario mapear a textura para um tamanho superior ao dela
     glTexParameteri(
         GL_TEXTURE_2D,
         GL_TEXTURE_MAG_FILTER,
@@ -68,77 +56,70 @@ GLuint carregarTexturaBMP(
     );
 
 
-    // Impede repeticao nas bordas.
+    // impede repeticao da textura quando esta ultrapassar as bordas
+    // eixo x
     glTexParameteri(
         GL_TEXTURE_2D,
         GL_TEXTURE_WRAP_S,
         GL_CLAMP
     );
 
+    // eixo y
     glTexParameteri(
         GL_TEXTURE_2D,
         GL_TEXTURE_WRAP_T,
         GL_CLAMP
     );
 
-
-    // BMP usa alinhamento de 4 bytes.
+    // como o OpenGL deve interpretar a organização dos dados na memória
     glPixelStorei(
-        GL_UNPACK_ALIGNMENT,
-        4
+        GL_UNPACK_ALIGNMENT, // como os dados dos pixels serao organizados na memoria
+        1                    // leia os pixels exatamente como eles estão organizados
     );
 
 
-    // ========================================================
-    // ENVIAR IMAGEM PARA A PLACA DE VIDEO
-    // ========================================================
-
-    if (bitmap.bmBitsPixel == 24) {
-
+    // pega os pixels da imagem e cria uma textura 2d opengl
+    // passam da ram para o gerenciamento de texturas do opengl 
+    if (canaisDeCor == 3) {
         glTexImage2D(
-            GL_TEXTURE_2D,
-            0,
-            GL_RGB,
-            bitmap.bmWidth,
-            bitmap.bmHeight,
-            0,
-            GL_BGR_EXT,
-            GL_UNSIGNED_BYTE,
-            bitmap.bmBits
+            GL_TEXTURE_2D, // tipo/alvo da textura
+            0, // nivel principal da imagem, 0 = nivel original
+            GL_RGB, // formato interno que queremos que o OpenGL use para armazenar a textura
+            largura,
+            altura,
+            0, // espessura de borda, 0 = sem borda
+            GL_RGB, // formato dos dados que estamos entregando
+            GL_UNSIGNED_BYTE, // tipo de cada componente dos pixels, 1 byte por componente
+            dados // ponteiro para os pixels que o stbi_load() carregou na RAM
         );
-    }
-
-    else {
-
+    } else if (canaisDeCor == 4) {
         glTexImage2D(
             GL_TEXTURE_2D,
             0,
             GL_RGBA,
-            bitmap.bmWidth,
-            bitmap.bmHeight,
+            largura,
+            altura,
             0,
-            GL_BGRA_EXT,
+            GL_RGBA,
             GL_UNSIGNED_BYTE,
-            bitmap.bmBits
+            dados
         );
+    } else {
+        stbi_image_free(dados);
+        glDeleteTextures(1, &textura);
+
+        return 0;
     }
+
+    // libera a imagem da ram
+    stbi_image_free(dados);
 
     return textura;
 }
 
-// ============================================================
-// LIBERAR TEXTURA
-// ============================================================
 
-void liberarTextura(
-    GLuint textura
-) {
+// liberando textura
 
-    if (textura != 0) {
-
-        glDeleteTextures(
-            1,
-            &textura
-        );
-    }
+void liberarTextura(GLuint textura) {
+    glDeleteTextures(1, &textura);
 }
