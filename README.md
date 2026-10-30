@@ -336,14 +336,16 @@ cafeteria-opengl/
 
 ## Requisitos para compilação
 
-O projeto foi desenvolvido no Windows utilizando:
+O projeto utiliza:
 
 - C++;
 - OpenGL;
-- Win32;
-- MinGW / g++.
+- GLUT;
+- stb_image para carregamento de imagens;
+- CMake;
+- GCC / g++.
 
-O compilador `g++` deve estar configurado no PATH do Windows.
+O compilador `g++` deve estar configurado no PATH de variáveis do seu SO.
 
 Para verificar:
 
@@ -360,7 +362,9 @@ Além do método manual com `g++` apresentado abaixo, o projeto também pode ser
 ### Requisitos para CMake
 
 - CMake 3.20 ou superior;
-- MinGW-w64 / GCC com `g++`;
+- GCC / g++;
+- OpenGL;
+- GLUT;;
 - Ninja (opcional).
 
 Verifique as ferramentas:
@@ -370,27 +374,34 @@ cmake --version
 g++ --version
 ```
 
-
 ### Configurar e compilar com CMake
 
 Execute os comandos a partir da pasta raiz do projeto:
 
 ```powershell
-cmake -S . -B build -G "MinGW Makefiles"
+cmake -S . -B build 
 cmake --build build
-```
-
-Para executar a versão compilada:
-
-```powershell
-.\build\cafeteria_opengl.exe
 ```
 
 Para uma compilação Release:
 
 ```powershell
-cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build
+```
+
+## Executar
+
+No Windows:
+
+```powershell
+.\build\cafeteria_opengl.exe
+```
+
+No Linux:
+
+```powershell
+.\build\cafeteria_opengl
 ```
 
 ### Usar no CLion
