@@ -1,8 +1,6 @@
 #include "texturas.h"
 
-#include <windows.h>
 #include <GL/gl.h>
-
 
 // Alguns headers antigos do OpenGL nao possuem
 // essas constantes.
@@ -14,6 +12,9 @@
 #define GL_BGRA_EXT 0x80E1
 #endif
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 
 // ============================================================
 // CARREGAR TEXTURA BMP
@@ -23,46 +24,15 @@ GLuint carregarTexturaBMP(
     const char* caminho
 ) {
 
-    // Carrega o BMP usando o proprio Windows.
-    HBITMAP imagem =
-        (HBITMAP)LoadImageA(
-            NULL,
-            caminho,
-            IMAGE_BITMAP,
-            0,
-            0,
-            LR_LOADFROMFILE |
-            LR_CREATEDIBSECTION
-        );
+    
 
 
-    // Se nao encontrou a imagem.
-    if (imagem == NULL) {
-        return 0;
-    }
+   
+
+    
 
 
-    // Informacoes da imagem.
-    BITMAP bitmap;
-
-    GetObject(
-        imagem,
-        sizeof(BITMAP),
-        &bitmap
-    );
-
-
-    // Aceitamos BMP de 24 ou 32 bits.
-    if (
-        bitmap.bmBitsPixel != 24 &&
-        bitmap.bmBitsPixel != 32
-    ) {
-
-        DeleteObject(imagem);
-
-        return 0;
-    }
-
+   
 
     // ========================================================
     // CRIAR TEXTURA OPENGL
@@ -153,14 +123,8 @@ GLuint carregarTexturaBMP(
         );
     }
 
-
-    // O OpenGL ja recebeu os pixels.
-    DeleteObject(imagem);
-
-
     return textura;
 }
-
 
 // ============================================================
 // LIBERAR TEXTURA
