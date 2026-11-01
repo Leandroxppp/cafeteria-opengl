@@ -146,7 +146,7 @@ static void desenharBatente() {
 // Tambem recebe material metalico com reflexo especular.
 // ============================================================
 
-static void desenharMacaneta() {
+static void desenharMacaneta(float ladoZ) {
 
     // Ativa o material metalico
     aplicarMaterialMetal();
@@ -163,7 +163,7 @@ static void desenharMacaneta() {
     glTranslatef(
         1.18f,
         1.05f,
-       -0.075f
+        ladoZ * 0.075f
     );
 
 
@@ -204,7 +204,7 @@ static void desenharMacaneta() {
     glTranslatef(
         1.11f,
         1.05f,
-       -0.105f
+        ladoZ * 0.105f
     );
 
 
@@ -460,7 +460,13 @@ void desenharPorta(float angulo) {
     // acompanha a rotacao automaticamente.
     // ========================================================
 
-    desenharMacaneta();
+    // Maçaneta da face interna (lado Z negativo).
+    desenharMacaneta(-1.0f);
+
+
+    // Maçaneta da face externa (lado Z positivo).
+    // As duas ficam dentro da matriz da folha e acompanham sua rotação.
+    desenharMacaneta(1.0f);
 
 
     glPopMatrix();
