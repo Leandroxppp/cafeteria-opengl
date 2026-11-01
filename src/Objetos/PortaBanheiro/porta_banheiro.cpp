@@ -142,8 +142,9 @@ static void desenharMacaneta(
     );
 
 
-    float deslocamentoX =
-        ladoInterno ? -0.065f : 0.065f;
+    // Mantem o puxador voltado para o mesmo lado da macaneta
+    // da porta principal, tanto na face interna quanto na externa.
+    const float deslocamentoX = -0.065f;
 
 
     // Puxador
