@@ -3,7 +3,7 @@
 #include "../../Renderizacao/primitivas.h"
 #include "../../Texturas/texturas.h"
 
-#include <windows.h>
+// #include <windows.h>
 #include <GL/gl.h>
 
 

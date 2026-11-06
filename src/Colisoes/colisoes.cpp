@@ -595,10 +595,7 @@ static bool colideComPiaBanheiro(
 // POSICAO DA CAMERA E VALIDA?
 // ============================================================
 
-bool posicaoCameraValida(
-    float x,
-    float z
-) {
+bool posicaoCameraValida(float x, float z) {
 
     // ========================================================
     // PAREDES EXTERNAS

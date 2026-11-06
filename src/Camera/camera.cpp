@@ -5,7 +5,6 @@
 #include <GL/gl.h>
 #include <cmath>
 
-
 // ============================================================
 // DADOS DA CAMERA
 // ============================================================
@@ -21,7 +20,6 @@ static float pitch = 0.0f;
 
 static const float PI = 3.14159265f;
 
-
 // ============================================================
 // MOVIMENTO COM COLISAO
 //
@@ -34,58 +32,29 @@ static const float PI = 3.14159265f;
 // Isso permite deslizar pelas paredes e objetos.
 // ============================================================
 
-static void tentarMover(
-    float deslocamentoX,
-    float deslocamentoZ
-) {
+static void tentarMover(float deslocamentoX, float deslocamentoZ) {
 
-    float novoX =
-        cameraX + deslocamentoX;
+    float novoX = cameraX + deslocamentoX;
+    float novoZ = cameraZ + deslocamentoZ;
 
-    float novoZ =
-        cameraZ + deslocamentoZ;
-
-
-    // ========================================================
     // TENTA MOVIMENTO COMPLETO
-    // ========================================================
-
-    if (posicaoCameraValida(
-        novoX,
-        novoZ
-    )) {
-
+    if (posicaoCameraValida(novoX, novoZ)) {
         cameraX = novoX;
         cameraZ = novoZ;
 
-        return;
+    } else {
+        // TENTA APENAS X
+        if (posicaoCameraValida(novoX, cameraZ)) {
+            cameraX = novoX;
+        }
+        
+        // TENTA APENAS Z
+        if (posicaoCameraValida(cameraX, novoZ)) {
+            cameraZ = novoZ;
+        }
     }
 
-
-    // ========================================================
-    // TENTA APENAS X
-    // ========================================================
-
-    if (posicaoCameraValida(
-        novoX,
-        cameraZ
-    )) {
-
-        cameraX = novoX;
-    }
-
-
-    // ========================================================
-    // TENTA APENAS Z
-    // ========================================================
-
-    if (posicaoCameraValida(
-        cameraX,
-        novoZ
-    )) {
-
-        cameraZ = novoZ;
-    }
+    return;
 }
 
 
@@ -136,32 +105,13 @@ void aplicarCamera() {
     );
 }
 
-
-// ============================================================
 // W - FRENTE
-// ============================================================
+void moverCameraFrente(float distancia) {
+    float angulo = yaw * PI / 180.0f;
+    float deslocamentoX = (-sinf(angulo)) * distancia;
+    float deslocamentoZ = (-cosf(angulo)) * distancia;
 
-void moverCameraFrente(
-    float distancia
-) {
-
-    float angulo =
-        yaw * PI / 180.0f;
-
-
-    float deslocamentoX =
-        -sinf(angulo) *
-        distancia;
-
-    float deslocamentoZ =
-        -cosf(angulo) *
-        distancia;
-
-
-    tentarMover(
-        deslocamentoX,
-        deslocamentoZ
-    );
+    tentarMover(deslocamentoX, deslocamentoZ);
 }
 
 
@@ -272,6 +222,36 @@ void rotacionarCamera(
     pitch -=
         deltaY *
         sensibilidade;
+
+
+    // ========================================================
+    // LIMITAR VISAO VERTICAL
+    // ========================================================
+
+    if (pitch > 85.0f) {
+
+        pitch = 85.0f;
+    }
+
+
+    if (pitch < -85.0f) {
+
+        pitch = -85.0f;
+    }
+}
+
+
+// ============================================================
+// ROTACAO DIRETA (SETAS)
+// ============================================================
+
+void girarCamera(
+    float deltaYaw,
+    float deltaPitch
+) {
+
+    yaw += deltaYaw;
+    pitch += deltaPitch;
 
 
     // ========================================================

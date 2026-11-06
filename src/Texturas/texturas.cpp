@@ -18,8 +18,6 @@ GLuint carregarTexturaBMP(const char* caminho) {
     if (!dados) {
         return 0;
     }
-   
-
 
     // configuracao de textura
 
@@ -31,6 +29,7 @@ GLuint carregarTexturaBMP(const char* caminho) {
         &textura
     );
 
+    
     // a textura que estamos lidando, textura, é do tipo 2d
     glBindTexture(
         GL_TEXTURE_2D,

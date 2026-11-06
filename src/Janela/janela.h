@@ -1,26 +1,28 @@
 #ifndef JANELA_H
 #define JANELA_H
 
-#include <windows.h>
+// Declaracao antecipada para nao expor o GLFW nos demais modulos.
+struct GLFWwindow;
 
-// Cria a janela e inicializa o contexto OpenGL
-bool criarJanela(
-    HINSTANCE hInstance,
-    int nCmdShow
-);
+// Cria a janela e o contexto OpenGL. Retorna false em caso de erro.
+bool criarJanela(int largura, int altura, const char* titulo);
 
-// Processa os eventos do Windows
-// Retorna false quando o programa deve fechar
-bool processarEventos();
+// Janela GLFW atual.
+GLFWwindow* obterJanela();
 
-// Atualiza o conteúdo exibido na tela
-void atualizarJanela();
+// Tamanho do framebuffer, usado por glViewport e pela projecao.
+void obterTamanhoJanela(int* largura, int* altura);
 
-// Libera os recursos da janela e do OpenGL
+// Apresenta o frame (double buffering).
+void trocarBuffers();
+
+// Processa os eventos pendentes (teclado, mouse, fechar janela).
+void processarEventos();
+
+// Verdadeiro quando o usuario pediu para fechar a janela.
+bool janelaDeveFechar();
+
+// Libera janela, contexto e o GLFW.
 void destruirJanela();
-
-// Retorna o tamanho atual da janela
-int obterLarguraJanela();
-int obterAlturaJanela();
 
 #endif

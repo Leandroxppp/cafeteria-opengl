@@ -1,13 +1,20 @@
 #ifndef CONTROLES_H
 #define CONTROLES_H
 
-void inicializarControles();
-
+// Callback de teclado do GLFW.
 void teclaPressionada(int tecla);
 void teclaSolta(int tecla);
 
-void atualizarControles();
+// Callback de mouse do GLFW (posicao virtual com cursor capturado).
+void moverMouse(double x, double y);
 
-void moverMouse(int deltaX, int deltaY);
+// Descarta a ultima posicao do mouse (ao capturar/liberar o cursor).
+void redefinirMouse();
+
+// Libera todas as teclas (por exemplo, ao perder o foco).
+void soltarTodasAsTeclas();
+
+// Atualiza o movimento continuo (WASD e setas).
+void atualizarControles(float deltaTempo);
 
 #endif

@@ -47,6 +47,7 @@ O projeto possui:
 - navegação em primeira pessoa;
 - movimentação utilizando W, A, S e D;
 - controle da câmera utilizando o mouse;
+- rotação da câmera pelas setas do teclado (alternativa ao mouse);
 - sistema próprio de colisões;
 - abertura e fechamento da porta principal;
 - abertura e fechamento da porta do banheiro;
@@ -69,7 +70,12 @@ O projeto possui:
 | `A` | Mover para a esquerda |
 | `D` | Mover para a direita |
 | `Mouse` | Controlar a direção da câmera |
+| `↑` / `↓` | Olhar para cima / para baixo |
+| `←` / `→` | Girar a câmera para a esquerda / direita |
 | `E` | Interagir com objetos próximos |
+| `Esc` | Fechar a aplicação |
+
+O cursor é capturado pela janela enquanto ela está em foco. Ao perder o foco, as teclas são liberadas automaticamente.
 
 ---
 
@@ -276,7 +282,9 @@ A câmera utiliza navegação em primeira pessoa.
 
 A posição do jogador é controlada pelas teclas `W`, `A`, `S` e `D`.
 
-O mouse controla a rotação horizontal e vertical da câmera.
+O mouse controla a rotação horizontal e vertical da câmera. Como a janela utiliza GLFW com o cursor capturado (`GLFW_CURSOR_DISABLED`), o movimento relativo funciona tanto em X11 quanto em Wayland.
+
+As setas `←`, `→`, `↑` e `↓` também rotacionam a câmera e servem como alternativa caso o mouse não esteja disponível.
 
 Também foi implementado deslizamento durante colisões. Dessa forma, quando o jogador tenta andar diagonalmente contra uma parede ou objeto, ainda é possível continuar o movimento pelo eixo que estiver livre.
 
@@ -338,12 +346,20 @@ cafeteria-opengl/
 
 O projeto utiliza:
 
-- C++;
+- C++ (C++14);
 - OpenGL;
-- GLUT;
+- GLFW 3.4 (camada de janela, entrada e contexto OpenGL);
 - stb_image para carregamento de imagens;
 - CMake;
 - GCC / g++.
+
+No Fedora, as dependências podem ser instaladas com:
+
+```bash
+sudo dnf install gcc-c++ cmake glfw-devel mesa-libGL-devel mesa-libGLU-devel
+```
+
+Em outras distribuições, instale os pacotes equivalentes de desenvolvimento de GLFW 3.4, OpenGL e GLU.
 
 O compilador `g++` deve estar configurado no PATH de variáveis do seu SO.
 
@@ -364,7 +380,7 @@ Além do método manual com `g++` apresentado abaixo, o projeto também pode ser
 - CMake 3.20 ou superior;
 - GCC / g++;
 - OpenGL;
-- GLUT;;
+- GLFW 3.4 (o CMake procura com `find_package(glfw3 3.4 REQUIRED)`);
 - Ninja (opcional).
 
 Verifique as ferramentas:
@@ -400,9 +416,11 @@ No Windows:
 
 No Linux:
 
-```powershell
-.\build\cafeteria_opengl
+```bash
+./build/cafeteria_opengl
 ```
+
+> Execute a partir da raiz do projeto: os caminhos de textura (`assets/texturas/...`) são relativos ao diretório de trabalho.
 
 ### Usar no CLion
 
@@ -417,26 +435,30 @@ No Linux:
 
 ## Como compilar manualmente com g++
 
-Abra o PowerShell na pasta raiz do projeto e execute:
+Na pasta raiz do projeto, no Linux:
 
-```powershell
-g++ src\main.cpp src\Janela\janela.cpp src\Camera\camera.cpp src\Controles\controles.cpp src\Colisoes\colisoes.cpp src\Interacoes\interacoes.cpp src\Renderizacao\primitivas.cpp src\Renderizacao\renderizador.cpp src\Texturas\texturas.cpp src\Sala\sala.cpp src\Objetos\Mesa\mesa.cpp src\Objetos\Cadeira\cadeira.cpp src\Objetos\Porta\porta.cpp src\Objetos\PortaBanheiro\porta_banheiro.cpp src\Objetos\Menu\menu.cpp src\Objetos\Interruptor\interruptor.cpp src\Objetos\PortaGuardanapos\porta_guardanapos.cpp src\Objetos\Xicara\xicara.cpp src\Objetos\Vasinho\vasinho.cpp src\Objetos\Balcao\balcao.cpp src\Objetos\Vitrine\vitrine.cpp src\Objetos\Registradora\registradora.cpp src\Objetos\MaquinaCafe\maquina_cafe.cpp src\Objetos\Luminaria\luminaria.cpp src\Objetos\JanelaCafe\janela_cafe.cpp src\Objetos\Prateleira\prateleira.cpp src\Objetos\VasoSanitario\vaso_sanitario.cpp src\Objetos\PiaBanheiro\pia_banheiro.cpp src\Objetos\EspelhoBanheiro\espelho_banheiro.cpp -o Cafeteria3D.exe -lopengl32 -lgdi32 -mwindows
+```bash
+mkdir -p build
+g++ -std=c++14 $(find src -name '*.cpp') \
+    -o build/cafeteria_opengl \
+    $(pkg-config --cflags --libs glfw3) \
+    -lGL -lGLU
 ```
 
-Se a compilação terminar sem erros, o executável será criado na pasta principal:
+Se a compilação terminar sem erros, o executável será criado em:
 
 ```text
-Cafeteria3D.exe
+build/cafeteria_opengl
 ```
 
 ---
 
 ## Como executar
 
-No PowerShell:
+No Linux, a partir da raiz do projeto:
 
-```powershell
-.\Cafeteria3D.exe
+```bash
+./build/cafeteria_opengl
 ```
 
 ---
@@ -485,7 +507,7 @@ Contém os diferentes objetos modelados para compor a cena.
 | Translação | `glTranslatef()` |
 | Rotação | `glRotatef()` |
 | Escala | `glScalef()` |
-| Navegação | W/A/S/D + mouse |
+| Navegação | W/A/S/D + mouse (setas como alternativa) |
 | Pelo menos 3 interações | Portas, cadeiras e iluminação |
 | Iluminação | Luz geral + três luminárias |
 | Materiais distintos | Madeira, metal, porcelana, plástico, vidro etc. |

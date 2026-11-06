@@ -3,8 +3,9 @@ project(cafeteria_opengl)
 
 set(CMAKE_CXX_STANDARD 14)
 
-# Localiza as bibliotecas do OpenGL no sistema
+# Localiza as bibliotecas do OpenGL e a camada de janela
 find_package(OpenGL REQUIRED)
+find_package(glfw3 3.4 REQUIRED)
 
 # Diretorios de inclusao
 include_directories(src/Camera)
@@ -95,8 +96,8 @@ add_executable(cafeteria_opengl
         src/Texturas/texturas.h
         src/main.cpp)
 
-# Linkagem das bibliotecas OpenGL e GLU
-target_link_libraries(cafeteria_opengl PRIVATE OpenGL::GL OpenGL::GLU)
+# Linkagem das bibliotecas OpenGL, GLU e GLFW
+target_link_libraries(cafeteria_opengl PRIVATE OpenGL::GL OpenGL::GLU glfw)
 
 # Copia a pasta assets para o diretorio onde o executavel e rodado (cmake-build-debug)
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/assets DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

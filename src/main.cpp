@@ -1,4 +1,4 @@
-#include <windows.h>
+#include <GLFW/glfw3.h>
 
 #include "Janela/janela.h"
 #include "Camera/camera.h"
@@ -6,104 +6,159 @@
 #include "Interacoes/interacoes.h"
 #include "Renderizacao/renderizador.h"
 
+// ============================================================
+// TECLADO
+// ============================================================
 
-int WINAPI WinMain(
-    HINSTANCE hInstance,
-    HINSTANCE,
-    LPSTR,
-    int nCmdShow
+static void callbackTecla(
+    GLFWwindow* janela,
+    int tecla,
+    int,
+    int acao,
+    int
 ) {
 
-    // ========================================================
-    // INICIALIZACAO
-    // ========================================================
+    if (
+        tecla == GLFW_KEY_ESCAPE &&
+        acao == GLFW_PRESS
+    ) {
 
-    // Inicializa teclado e controles
-    inicializarControles();
+        glfwSetWindowShouldClose(
+            janela,
+            GLFW_TRUE
+        );
 
+        return;
+    }
 
-    // Coloca a camera na posicao inicial
-    inicializarCamera();
+    if (acao == GLFW_PRESS) {
 
+        teclaPressionada(tecla);
+    }
 
-    // Inicializa as interacoes
-    // Porta começa fechada
-    inicializarInteracoes();
+    else if (acao == GLFW_RELEASE) {
 
+        teclaSolta(tecla);
+    }
+}
 
-    // Cria a janela e inicia o OpenGL
-    if (!criarJanela(
-        hInstance,
-        nCmdShow
-    )) {
+// ============================================================
+// MOUSE
+//
+// Com GLFW_CURSOR_DISABLED o GLFW entrega a posicao virtual
+// do cursor, sem limite de tela. Funciona no Wayland atraves
+// do protocolo relative-pointer.
+// ============================================================
+
+static void callbackMouse(
+    GLFWwindow*,
+    double x,
+    double y
+) {
+
+    moverMouse(x, y);
+}
+
+// ============================================================
+// FOCO
+// ============================================================
+
+static void callbackFoco(
+    GLFWwindow*,
+    int focado
+) {
+
+    // Evita teclas "presas" ao trocar de janela.
+    if (!focado) {
+
+        soltarTodasAsTeclas();
+    }
+
+    redefinirMouse();
+}
+
+// ============================================================
+// MAIN
+// ============================================================
+
+int main() {
+
+    if (!criarJanela(800, 600, "Cafeteria")) {
 
         return 1;
     }
 
+    GLFWwindow* janela = obterJanela();
+
+    glfwSetKeyCallback(
+        janela,
+        callbackTecla
+    );
+
+    glfwSetCursorPosCallback(
+        janela,
+        callbackMouse
+    );
+
+    glfwSetWindowFocusCallback(
+        janela,
+        callbackFoco
+    );
+
+    // Captura o cursor: movimento relativo continuo.
+    glfwSetInputMode(
+        janela,
+        GLFW_CURSOR,
+        GLFW_CURSOR_DISABLED
+    );
+
+    redefinirMouse();
+
+    glEnable(GL_DEPTH_TEST);
+
+    inicializarCamera();
+    inicializarInteracoes();
 
     // ========================================================
     // LOOP PRINCIPAL
     // ========================================================
 
-    bool executando = true;
+    double instanteAnterior =
+        glfwGetTime();
 
+    while (!janelaDeveFechar()) {
 
-    while (executando) {
+        double instanteAtual =
+            glfwGetTime();
 
-        // ----------------------------------------------------
-        // EVENTOS
-        // ----------------------------------------------------
+        float deltaTempo =
+            static_cast<float>(
+                instanteAtual -
+                instanteAnterior
+            );
 
-        executando =
-            processarEventos();
+        instanteAnterior =
+            instanteAtual;
 
+        // Evita passos grandes depois de uma pausa,
+        // que poderiam atravessar a colisao.
+        if (deltaTempo > 0.05f) {
 
-        if (!executando) {
-            break;
+            deltaTempo = 0.05f;
         }
 
+        processarEventos();
 
-        // ----------------------------------------------------
-        // CONTROLES
-        // ----------------------------------------------------
-
-        atualizarControles();
-
-
-        // ----------------------------------------------------
-        // INTERACOES
-        //
-        // Atualiza a animacao da porta.
-        // ----------------------------------------------------
+        atualizarControles(deltaTempo);
 
         atualizarInteracoes();
 
-
-        // ----------------------------------------------------
-        // DESENHAR CENA
-        // ----------------------------------------------------
-
         renderizarCena();
 
-
-        // ----------------------------------------------------
-        // MOSTRAR FRAME
-        // ----------------------------------------------------
-
-        atualizarJanela();
-
-
-        // Aproximadamente 60 FPS
-        Sleep(16);
+        trocarBuffers();
     }
 
-
-    // ========================================================
-    // FINALIZACAO
-    // ========================================================
-
     destruirJanela();
-
 
     return 0;
 }

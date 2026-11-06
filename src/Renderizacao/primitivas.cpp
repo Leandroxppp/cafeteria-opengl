@@ -1,6 +1,6 @@
 #include "primitivas.h"
 
-#include <windows.h>
+// #include <windows.h>
 #include <GL/gl.h>
 #include <cmath>
 

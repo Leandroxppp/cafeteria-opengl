@@ -16,6 +16,9 @@ void moverCameraDireita(float distancia);
 // Rotacao pelo mouse
 void rotacionarCamera(float deltaX, float deltaY);
 
+// Rotacao direta em graus (usada pelas setas)
+void girarCamera(float deltaYaw, float deltaPitch);
+
 // Posicao atual
 float obterCameraX();
 float obterCameraY();
