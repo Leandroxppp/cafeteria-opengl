@@ -143,7 +143,7 @@ static void desenharMacaneta(
 
 
     float deslocamentoX =
-        ladoInterno ? -0.065f : 0.065f;
+        -0.065f;
 
 
     // Puxador
