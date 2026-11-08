@@ -1,33 +1,24 @@
 #include <GLFW/glfw3.h>
 
+#include <algorithm>
+
 #include "Janela/janela.h"
 #include "Camera/camera.h"
 #include "Controles/controles.h"
 #include "Interacoes/interacoes.h"
 #include "Renderizacao/renderizador.h"
 
-// ============================================================
-// TECLADO
-// ============================================================
+namespace {
 
-static void callbackTecla(
-    GLFWwindow* janela,
-    int tecla,
-    int,
-    int acao,
-    int
-) {
+const float DELTA_MAXIMO = 0.05f;
 
-    if (
-        tecla == GLFW_KEY_ESCAPE &&
-        acao == GLFW_PRESS
-    ) {
+void callbackTecla(
+    GLFWwindow* janela, int tecla, int, int acao, int) 
+{
 
-        glfwSetWindowShouldClose(
-            janela,
-            GLFW_TRUE
-        );
+    if (tecla == GLFW_KEY_ESCAPE && acao == GLFW_PRESS) {
 
+        glfwSetWindowShouldClose(janela, GLFW_TRUE);
         return;
     }
 
@@ -42,34 +33,16 @@ static void callbackTecla(
     }
 }
 
-// ============================================================
-// MOUSE
-//
-// Com GLFW_CURSOR_DISABLED o GLFW entrega a posicao virtual
-// do cursor, sem limite de tela. Funciona no Wayland atraves
-// do protocolo relative-pointer.
-// ============================================================
-
-static void callbackMouse(
-    GLFWwindow*,
-    double x,
-    double y
-) {
+// Com GLFW_CURSOR_DISABLED o GLFW entrega a posicao virtual do cursor
+void callbackMouse(GLFWwindow*, double x, double y) {
 
     moverMouse(x, y);
 }
 
-// ============================================================
-// FOCO
-// ============================================================
-
-static void callbackFoco(
-    GLFWwindow*,
-    int focado
-) {
+void callbackFoco(GLFWwindow*, int focado) {
 
     // Evita teclas "presas" ao trocar de janela.
-    if (!focado) {
+    if (!focado) { // 0 se perdeu o foco
 
         soltarTodasAsTeclas();
     }
@@ -77,88 +50,65 @@ static void callbackFoco(
     redefinirMouse();
 }
 
-// ============================================================
-// MAIN
-// ============================================================
+void configurarEntrada(GLFWwindow* janela) {
+
+    glfwSetKeyCallback(janela, callbackTecla);
+    glfwSetCursorPosCallback(janela, callbackMouse);
+    glfwSetWindowFocusCallback(janela, callbackFoco);
+
+    glfwSetInputMode(janela, GLFW_CURSOR, GLFW_CURSOR_DISABLED); // ocultar o cursor
+
+    redefinirMouse();
+}
+
+float calcularDeltaTempo(double& instanteAnterior) {
+
+    const double instanteAtual = glfwGetTime();
+
+    const float delta =
+        static_cast<float>(instanteAtual - instanteAnterior);
+
+    instanteAnterior = instanteAtual;
+
+    // Evita passos grandes depois de uma pausa, que poderiam
+    // atravessar a colisao.
+    return std::min(delta, DELTA_MAXIMO);
+}
+
+} // namespace
 
 int main() {
 
     if (!criarJanela(800, 600, "Cafeteria")) {
-
         return 1;
     }
 
     GLFWwindow* janela = obterJanela();
 
-    glfwSetKeyCallback(
-        janela,
-        callbackTecla
-    );
+    configurarEntrada(janela);
 
-    glfwSetCursorPosCallback(
-        janela,
-        callbackMouse
-    );
-
-    glfwSetWindowFocusCallback(
-        janela,
-        callbackFoco
-    );
-
-    // Captura o cursor: movimento relativo continuo.
-    glfwSetInputMode(
-        janela,
-        GLFW_CURSOR,
-        GLFW_CURSOR_DISABLED
-    );
-
-    redefinirMouse();
-
-    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_DEPTH_TEST); // habilita o eixo z
 
     inicializarCamera();
     inicializarInteracoes();
 
-    // ========================================================
-    // LOOP PRINCIPAL
-    // ========================================================
-
-    double instanteAnterior =
-        glfwGetTime();
+    double instanteAnterior = glfwGetTime();
 
     while (!janelaDeveFechar()) {
 
-        double instanteAtual =
-            glfwGetTime();
+        const float deltaTempo = calcularDeltaTempo(instanteAnterior);
 
-        float deltaTempo =
-            static_cast<float>(
-                instanteAtual -
-                instanteAnterior
-            );
-
-        instanteAnterior =
-            instanteAtual;
-
-        // Evita passos grandes depois de uma pausa,
-        // que poderiam atravessar a colisao.
-        if (deltaTempo > 0.05f) {
-
-            deltaTempo = 0.05f;
-        }
-
-        processarEventos();
+        glfwPollEvents(); //processarEventos
 
         atualizarControles(deltaTempo);
-
-        atualizarInteracoes();
+        atualizarInteracoes(deltaTempo);
 
         renderizarCena();
-
-        trocarBuffers();
+        glfwSwapBuffers(janela);
     }
 
-    destruirJanela();
+    glfwDestroyWindow(janela); // destroe a janela
+    glfwTerminate(); 
 
     return 0;
 }

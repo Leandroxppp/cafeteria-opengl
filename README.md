@@ -6,6 +6,12 @@ A aplicação apresenta uma cafeteria 3D explorável, desenvolvida diretamente e
 
 O projeto foi desenvolvido sem o uso de motores gráficos ou frameworks como Unity, Godot ou Three.js.
 
+## Documentação do código
+
+Para uma explicação detalhada da arquitetura, do fluxo de execução, da matemática da câmera e das colisões, da renderização e das decisões de projeto, consulte:
+
+- [`docs/GUIA_CODIGO.md`](docs/GUIA_CODIGO.md) — guia de estudo da versão atual do código.
+
 ---
 
 ## Cenário
@@ -335,8 +341,11 @@ cafeteria-opengl/
 │       ├── Vitrine/
 │       └── Xicara/
 │
-├── CMakeLists.txt          # Opcional: compilação via CMake
-├── Cafeteria3D.exe
+├── docs/
+│   └── GUIA_CODIGO.md      # Explicação detalhada do código
+│
+├── CMakeLists.txt          # Compilação via CMake
+├── build/                  # Gerado pelo CMake (não versionado)
 └── README.md
 ```
 
@@ -420,14 +429,14 @@ No Linux:
 ./build/cafeteria_opengl
 ```
 
-> Execute a partir da raiz do projeto: os caminhos de textura (`assets/texturas/...`) são relativos ao diretório de trabalho.
+> Execute a partir da raiz do projeto: os caminhos de textura (`assets/texturas/...`) são relativos ao diretório de trabalho. Também é possível rodar de dentro de `build/`, pois o CMake copia `assets/` para lá após a compilação.
 
 ### Usar no CLion
 
 1. Abra a pasta raiz do projeto no CLion.
 2. Certifique-se de que o `CMakeLists.txt` esteja na raiz.
 3. Configure um toolchain com MinGW ou outro compilador C++ compatível.
-4. Aguarde a configuração do CMake e compile/executa o alvo `Cafeteria3D`.
+4. Aguarde a configuração do CMake e compile/execute o alvo `cafeteria_opengl`.
 
 > **Observação:** este método é adicional. O comando manual com `g++` continua disponível na seção seguinte. O CMake também precisa que os caminhos e nomes dos arquivos correspondam à estrutura real do projeto.
 
