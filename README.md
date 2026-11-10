@@ -4,7 +4,7 @@ Projeto desenvolvido para a disciplina de Computação Gráfica.
 
 A aplicação apresenta uma cafeteria 3D explorável, desenvolvida diretamente em C++ com OpenGL. O usuário pode caminhar pelo ambiente utilizando teclado e mouse, interagir com objetos e explorar diferentes áreas da cafeteria.
 
-O projeto foi desenvolvido sem o uso de motores gráficos ou frameworks como Unity, Godot ou Three.js.
+O projeto foi desenvolvido sem o uso de motores gráficos ou frameworks como Unity, Godot ou Three.js. A janela e a entrada de teclado e mouse usam a biblioteca GLFW; toda a modelagem, iluminação, texturas e colisões são implementadas no próprio projeto.
 
 ## Documentação do código
 
@@ -148,11 +148,11 @@ Alguns exemplos:
 
 ---
 
-## Transformações geométricas
+### Transformações geométricas
 
 O projeto utiliza as três transformações exigidas:
 
-### Translação
+#### Translação
 
 Utilizada para posicionar objetos no ambiente.
 
@@ -162,7 +162,7 @@ Exemplo:
 glTranslatef(x, y, z);
 ```
 
-### Rotação
+#### Rotação
 
 Utilizada na orientação dos objetos e também nas animações das portas.
 
@@ -177,7 +177,7 @@ glRotatef(
 );
 ```
 
-### Escala
+#### Escala
 
 Utilizada na modelagem de objetos como a porta e o vaso decorativo.
 
@@ -193,7 +193,7 @@ glScalef(
 
 ---
 
-## Iluminação
+### Iluminação
 
 A iluminação foi implementada utilizando o sistema de iluminação do OpenGL.
 
@@ -221,7 +221,7 @@ GL_LIGHT3
 
 ---
 
-## Materiais
+### Materiais
 
 Os objetos possuem diferentes propriedades de material.
 
@@ -238,7 +238,7 @@ São utilizadas propriedades como reflexão especular e `GL_SHININESS` para prod
 
 ---
 
-## Texturas
+### Texturas
 
 O projeto utiliza mapeamento de textura em diferentes elementos da cena.
 
@@ -258,13 +258,11 @@ piso.bmp
 porta.bmp
 ```
 
-As texturas são carregadas através de um carregador BMP implementado no próprio projeto.
-
 ---
 
-## Sistema de colisões
+### Sistema de colisões
 
-Foi desenvolvido um sistema próprio de colisões para impedir que a câmera atravesse determinados objetos.
+Foi desenvolvido um sistema próprio de colisões para impedir que a câmera atravesse determinados objetos. O jogador é tratado como um círculo no plano XZ, e os obstáculos são retângulos (ou, no caso das portas, segmentos) nesse mesmo plano.
 
 Existem colisões com:
 
@@ -275,18 +273,21 @@ Existem colisões com:
 - mesas;
 - cadeiras;
 - balcão;
+- prateleira atrás do balcão;
 - vaso sanitário;
 - pia.
 
 As cadeiras possuem colisão dinâmica, ou seja, a região de colisão acompanha a posição da cadeira quando ela é movimentada.
 
+Se uma porta ou uma cadeira em animação atingir o jogador, ele não fica preso: o movimento é liberado até que a câmera saia da região de colisão.
+
 ---
 
-## Câmera
+### Câmera
 
 A câmera utiliza navegação em primeira pessoa.
 
-A posição do jogador é controlada pelas teclas `W`, `A`, `S` e `D`.
+A posição do jogador é controlada pelas teclas `W`, `A`, `S` e `D`, com velocidade de 2,0 unidades por segundo (constante `VELOCIDADE_MOVIMENTO` em `src/Controles/controles.cpp`). Como o movimento é multiplicado pelo tempo de cada quadro, a velocidade é a mesma em computadores diferentes.
 
 O mouse controla a rotação horizontal e vertical da câmera. Como a janela utiliza GLFW com o cursor capturado (`GLFW_CURSOR_DISABLED`), o movimento relativo funciona tanto em X11 quanto em Wayland.
 
@@ -318,33 +319,37 @@ cafeteria-opengl/
 │   ├── Janela/
 │   ├── Renderizacao/
 │   ├── Sala/
-│   ├── Texturas/
+│   ├── Texturas/           # inclui stb_image.h
 │   │
-│   └── Objetos/
-│       ├── Balcao/
-│       ├── Cadeira/
-│       ├── EspelhoBanheiro/
-│       ├── Interruptor/
-│       ├── JanelaCafe/
-│       ├── Luminaria/
-│       ├── MaquinaCafe/
-│       ├── Menu/
-│       ├── Mesa/
-│       ├── PiaBanheiro/
-│       ├── Porta/
-│       ├── PortaBanheiro/
-│       ├── PortaGuardanapos/
-│       ├── Prateleira/
-│       ├── Registradora/
-│       ├── Vasinho/
-│       ├── VasoSanitario/
-│       ├── Vitrine/
-│       └── Xicara/
+│   ├── Objetos/
+│   │   ├── Balcao/
+│   │   ├── Cadeira/
+│   │   ├── EspelhoBanheiro/
+│   │   ├── Interruptor/
+│   │   ├── JanelaCafe/
+│   │   ├── Luminaria/
+│   │   ├── MaquinaCafe/
+│   │   ├── Menu/
+│   │   ├── Mesa/
+│   │   ├── PiaBanheiro/
+│   │   ├── Porta/
+│   │   ├── PortaBanheiro/
+│   │   ├── PortaGuardanapos/
+│   │   ├── Prateleira/
+│   │   ├── Registradora/
+│   │   ├── Vasinho/
+│   │   ├── VasoSanitario/
+│   │   ├── Vitrine/
+│   │   └── Xicara/
+│   │
+│   └── main.cpp
 │
 ├── docs/
 │   └── GUIA_CODIGO.md      # Explicação detalhada do código
 │
 ├── CMakeLists.txt          # Compilação via CMake
+├── COORDENADAS.txt         # Referência de posições usadas na cena
+├── .gitignore
 ├── build/                  # Gerado pelo CMake (não versionado)
 └── README.md
 ```
@@ -357,10 +362,10 @@ cafeteria-opengl/
 - CMake 3.20 ou superior;
 - OpenGL 2.1+ (compatibilidade);
 - GLU;
-- GLFW 3.4 (o CMake procura com `find_package(glfw3 3.4 REQUIRED)`);
+- GLFW 3.4 ou superior (o CMake procura com `find_package(glfw3 3.4 REQUIRED)`);
 - `stb_image` (já incluído em `src/Texturas/`, não é preciso instalar).
 
-> O projeto exige **GLFW 3.4**. Distribuições que ainda fornecem o GLFW 3.3 (por exemplo, Ubuntu 22.04) precisam compilar o GLFW a partir do código-fonte ou usar uma versão mais nova do sistema.
+> O projeto exige **GLFW 3.4 ou superior**. Distribuições que ainda fornecem o GLFW 3.3 (por exemplo, Ubuntu 22.04) precisam compilar o GLFW a partir do código-fonte ou usar uma versão mais nova do sistema.
 
 ---
 
@@ -390,24 +395,29 @@ sudo pacman -S --needed base-devel cmake glfw mesa glu
 ### Windows (MSYS2 / MinGW-w64)
 
 1. Instale o [MSYS2](https://www.msys2.org/).
-2. Abra o terminal **MSYS2 UCRT64** e atualize os pacotes:
+2. Abra o terminal **MSYS2 UCRT64** (e não o "MSYS2 MSYS" nem o "MINGW64") e atualize os pacotes:
 
 ```bash
 pacman -Syu
 ```
 
-3. Instale o compilador, o CMake e as bibliotecas:
+Se o terminal pedir para ser fechado durante a atualização, feche, abra o UCRT64 de novo e repita o comando.
+
+3. Instale o compilador, o CMake, o GLFW e o Ninja:
 
 ```bash
 pacman -S --needed \
     mingw-w64-ucrt-x86_64-toolchain \
     mingw-w64-ucrt-x86_64-cmake \
     mingw-w64-ucrt-x86_64-glfw \
-    mingw-w64-ucrt-x86_64-glu \
     mingw-w64-ucrt-x86_64-ninja
 ```
 
-4. Para executar o programa fora do terminal MSYS2, adicione `C:\msys64\ucrt64\bin` à variável `PATH` (é de lá que vem a DLL do GLFW). Dentro do terminal UCRT64 isso já funciona automaticamente.
+Quando o `pacman` perguntar quais pacotes do toolchain instalar, aperte `Enter` (instala todos).
+
+> **GLU no Windows:** não existe um pacote `glu` separado no MSYS2 UCRT64. A biblioteca GLU (`glu32`) acompanha o toolchain do MinGW-w64 e o próprio Windows, e o CMake a encontra sozinho. Se você tentar instalar `mingw-w64-ucrt-x86_64-glu`, o `pacman` responde `target not found` e cancela a instalação inteira.
+
+4. Para executar o programa **fora** do terminal MSYS2 (PowerShell ou duplo clique), adicione `C:\msys64\ucrt64\bin` à variável `PATH` do Windows (é de lá que vem a DLL do GLFW). Dentro do terminal UCRT64 isso já funciona automaticamente.
 
 > Alternativa: também é possível usar o **vcpkg + Visual Studio**. Nesse caso, instale o GLFW com `vcpkg install glfw3:x64-windows` e configure o CMake com `-DCMAKE_TOOLCHAIN_FILE=<caminho-do-vcpkg>/scripts/buildsystems/vcpkg.cmake`.
 
@@ -418,25 +428,47 @@ pacman -S --needed \
 
 ---
 
-## Como compilar (CMake)
+## Como compilar
 
-A compilação é feita **exclusivamente com CMake**. Execute os comandos a partir da pasta raiz do projeto.
+A compilação é feita **exclusivamente com CMake**.
 
-### Linux
+### 1. Entre na pasta raiz do projeto
+
+Todos os comandos abaixo devem ser executados na **pasta raiz**, a que contém o `CMakeLists.txt`, a pasta `src/` e a pasta `assets/`.
+
+Ao extrair um arquivo `.zip`, o Windows pode criar uma pasta dentro de outra com o mesmo nome. Nesse caso, entre na pasta interna e confira:
+
+```bash
+ls CMakeLists.txt
+```
+
+Se o arquivo for listado, você está no lugar certo. Se aparecer "No such file", use `ls` e `cd` até encontrá-lo.
+
+No terminal MSYS2, o terminal sempre abre na pasta inicial do usuário e os discos do Windows ficam em `/c/`, `/d/` etc. Por exemplo:
+
+```bash
+cd /c/Users/SEU_USUARIO/Downloads/cafeteria-opengl
+```
+
+Use aspas se o caminho tiver espaços: `cd "/c/Users/SEU_USUARIO/Downloads/minha pasta"`.
+
+### 2. Compile
+
+**Linux**
 
 ```bash
 cmake -S . -B build
 cmake --build build
 ```
 
-### Windows (terminal MSYS2 UCRT64)
+**Windows (terminal MSYS2 UCRT64)**
 
 ```bash
 cmake -S . -B build -G Ninja
 cmake --build build
 ```
 
-### Compilação Release
+**Compilação Release**
 
 ```bash
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
@@ -445,9 +477,13 @@ cmake --build build
 
 > Em geradores multi-config, como o Visual Studio, use `cmake --build build --config Release`. Nesse caso, o executável fica em `build/Release/`.
 
+> **Pasta `build/` antiga:** se já existir uma pasta `build/` vinda de outro computador ou de outro sistema (por exemplo, um binário de Linux copiado para o Windows), apague-a antes de configurar: `rm -rf build`. A pasta `build/` é gerada pelo CMake e não faz parte do código-fonte.
+
 ---
 
-## Executar
+## Como executar
+
+Execute a partir da **raiz do projeto**: os caminhos de textura (`assets/texturas/...`) são relativos ao diretório de trabalho. Também é possível rodar de dentro de `build/`, pois o CMake copia `assets/` para lá após a compilação.
 
 **Linux**
 
@@ -455,13 +491,17 @@ cmake --build build
 ./build/cafeteria_opengl
 ```
 
-**Windows**
+**Windows, no terminal MSYS2 UCRT64**
+
+```bash
+./build/cafeteria_opengl.exe
+```
+
+**Windows, no PowerShell** (exige `C:\msys64\ucrt64\bin` no `PATH`, conforme a instalação das dependências)
 
 ```powershell
 .\build\cafeteria_opengl.exe
 ```
-
-> Execute a partir da raiz do projeto: os caminhos de textura (`assets/texturas/...`) são relativos ao diretório de trabalho. Também é possível rodar de dentro de `build/`, pois o CMake copia `assets/` para lá após a compilação.
 
 ### Usar no CLion (opcional)
 
@@ -490,13 +530,17 @@ Responsável pelo estado e pelas animações dos objetos interativos.
 
 Implementa as verificações de colisão da câmera com paredes e objetos.
 
+### `Janela`
+
+Responsável pela criação da janela e do contexto OpenGL com GLFW.
+
 ### `Renderizacao`
 
 Coordena a renderização da cena e contém primitivas utilizadas na modelagem.
 
 ### `Texturas`
 
-Realiza o carregamento e gerenciamento das texturas BMP.
+Realiza o carregamento e gerenciamento das texturas BMP (usa `stb_image`).
 
 ### `Sala`
 
@@ -529,4 +573,4 @@ Contém os diferentes objetos modelados para compor a cena.
 
 - Leandro Marcio Elias da Silva
 - Daniel de Araujo Albuquerque
-- Guilherme Alessander da Silva Fernandes 
+- Guilherme Alessander da Silva Fernandes
