@@ -38,6 +38,12 @@ const RetanguloXZ BALCAO = {
     -3.04f, -2.26f
 };
 
+// Prateleira atras do balcao (X = -3.85, Z = -3.86, 1.75 x 0.34).
+const RetanguloXZ PRATELEIRA = {
+    -4.73f, -2.97f,
+    -4.04f, -3.69f
+};
+
 const RetanguloXZ VASO_SANITARIO = {
     3.86f, 4.64f,
     -3.84f, -3.05f
@@ -293,6 +299,11 @@ bool posicaoCameraValida(float x, float z) {
     }
 
     if (colideComPortaBanheiro(x, z)) {
+
+        return false;
+    }
+
+    if (colideComRetangulo(x, z, PRATELEIRA)) {
 
         return false;
     }
