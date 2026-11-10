@@ -351,124 +351,124 @@ cafeteria-opengl/
 
 ---
 
-## Requisitos para compilação
+## Requisitos
 
-O projeto utiliza:
+- C++14;
+- CMake 3.20 ou superior;
+- OpenGL 2.1+ (compatibilidade);
+- GLU;
+- GLFW 3.4 (o CMake procura com `find_package(glfw3 3.4 REQUIRED)`);
+- `stb_image` (já incluído em `src/Texturas/`, não é preciso instalar).
 
-- C++ (C++14);
-- OpenGL;
-- GLFW 3.4 (camada de janela, entrada e contexto OpenGL);
-- stb_image para carregamento de imagens;
-- CMake;
-- GCC / g++.
-
-No Fedora, as dependências podem ser instaladas com:
-
-```bash
-sudo dnf install gcc-c++ cmake glfw-devel mesa-libGL-devel mesa-libGLU-devel
-```
-
-Em outras distribuições, instale os pacotes equivalentes de desenvolvimento de GLFW 3.4, OpenGL e GLU.
-
-O compilador `g++` deve estar configurado no PATH de variáveis do seu SO.
-
-Para verificar:
-
-```powershell
-g++ --version
-```
+> O projeto exige **GLFW 3.4**. Distribuições que ainda fornecem o GLFW 3.3 (por exemplo, Ubuntu 22.04) precisam compilar o GLFW a partir do código-fonte ou usar uma versão mais nova do sistema.
 
 ---
 
-## Como compilar com CMake (alternativa)
+## Instalação das dependências
 
-Além do método manual com `g++` apresentado abaixo, o projeto também pode ser compilado com **CMake**. Os dois métodos ficam disponíveis; escolha o que preferir.
+### Linux
 
-### Requisitos para CMake
+**Fedora**
 
-- CMake 3.20 ou superior;
-- GCC / g++;
-- OpenGL;
-- GLFW 3.4 (o CMake procura com `find_package(glfw3 3.4 REQUIRED)`);
-- Ninja (opcional).
-
-Verifique as ferramentas:
-
-```powershell
-cmake --version
-g++ --version
+```bash
+sudo dnf install gcc-c++ make cmake glfw-devel mesa-libGL-devel mesa-libGLU-devel
 ```
 
-### Configurar e compilar com CMake
+**Ubuntu / Debian (24.04 ou superior)**
 
-Execute os comandos a partir da pasta raiz do projeto:
+```bash
+sudo apt update
+sudo apt install build-essential cmake libglfw3-dev libgl1-mesa-dev libglu1-mesa-dev
+```
 
-```powershell
-cmake -S . -B build 
+**Arch Linux**
+
+```bash
+sudo pacman -S --needed base-devel cmake glfw mesa glu
+```
+
+### Windows (MSYS2 / MinGW-w64)
+
+1. Instale o [MSYS2](https://www.msys2.org/).
+2. Abra o terminal **MSYS2 UCRT64** e atualize os pacotes:
+
+```bash
+pacman -Syu
+```
+
+3. Instale o compilador, o CMake e as bibliotecas:
+
+```bash
+pacman -S --needed \
+    mingw-w64-ucrt-x86_64-toolchain \
+    mingw-w64-ucrt-x86_64-cmake \
+    mingw-w64-ucrt-x86_64-glfw \
+    mingw-w64-ucrt-x86_64-glu \
+    mingw-w64-ucrt-x86_64-ninja
+```
+
+4. Para executar o programa fora do terminal MSYS2, adicione `C:\msys64\ucrt64\bin` à variável `PATH` (é de lá que vem a DLL do GLFW). Dentro do terminal UCRT64 isso já funciona automaticamente.
+
+> Alternativa: também é possível usar o **vcpkg + Visual Studio**. Nesse caso, instale o GLFW com `vcpkg install glfw3:x64-windows` e configure o CMake com `-DCMAKE_TOOLCHAIN_FILE=<caminho-do-vcpkg>/scripts/buildsystems/vcpkg.cmake`.
+
+### Dependências de execução
+
+- **Linux:** driver de vídeo com suporte a OpenGL (Mesa ou driver proprietário) e servidor gráfico X11 ou Wayland. Em ambientes sem GPU (por exemplo, WSL), use o WSLg ou um servidor X.
+- **Windows:** driver de vídeo com suporte a OpenGL e o `PATH` configurado para encontrar a DLL do GLFW, conforme acima.
+
+---
+
+## Como compilar (CMake)
+
+A compilação é feita **exclusivamente com CMake**. Execute os comandos a partir da pasta raiz do projeto.
+
+### Linux
+
+```bash
+cmake -S . -B build
 cmake --build build
 ```
 
-Para uma compilação Release:
+### Windows (terminal MSYS2 UCRT64)
 
-```powershell
+```bash
+cmake -S . -B build -G Ninja
+cmake --build build
+```
+
+### Compilação Release
+
+```bash
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 ```
 
+> Em geradores multi-config, como o Visual Studio, use `cmake --build build --config Release`. Nesse caso, o executável fica em `build/Release/`.
+
+---
+
 ## Executar
 
-No Windows:
+**Linux**
+
+```bash
+./build/cafeteria_opengl
+```
+
+**Windows**
 
 ```powershell
 .\build\cafeteria_opengl.exe
 ```
 
-No Linux:
-
-```bash
-./build/cafeteria_opengl
-```
-
 > Execute a partir da raiz do projeto: os caminhos de textura (`assets/texturas/...`) são relativos ao diretório de trabalho. Também é possível rodar de dentro de `build/`, pois o CMake copia `assets/` para lá após a compilação.
 
-### Usar no CLion
+### Usar no CLion (opcional)
 
 1. Abra a pasta raiz do projeto no CLion.
 2. Certifique-se de que o `CMakeLists.txt` esteja na raiz.
 3. Configure um toolchain com MinGW ou outro compilador C++ compatível.
 4. Aguarde a configuração do CMake e compile/execute o alvo `cafeteria_opengl`.
-
-> **Observação:** este método é adicional. O comando manual com `g++` continua disponível na seção seguinte. O CMake também precisa que os caminhos e nomes dos arquivos correspondam à estrutura real do projeto.
-
----
-
-## Como compilar manualmente com g++
-
-Na pasta raiz do projeto, no Linux:
-
-```bash
-mkdir -p build
-g++ -std=c++14 $(find src -name '*.cpp') \
-    -o build/cafeteria_opengl \
-    $(pkg-config --cflags --libs glfw3) \
-    -lGL -lGLU
-```
-
-Se a compilação terminar sem erros, o executável será criado em:
-
-```text
-build/cafeteria_opengl
-```
-
----
-
-## Como executar
-
-No Linux, a partir da raiz do projeto:
-
-```bash
-./build/cafeteria_opengl
-```
 
 ---
 
