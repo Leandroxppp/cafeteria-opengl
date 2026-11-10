@@ -255,12 +255,12 @@ void desenharVasoSanitario(
     );
 
 
-    glRotatef(
-        rotacao,
-        0.0f,
-        1.0f,
-        0.0f
-    );
+    // glRotatef(
+    //     rotacao,
+    //     0.0f,
+    //     1.0f,
+    //     0.0f
+    // );
 
 
     aplicarMaterialPorcelana();
@@ -352,7 +352,7 @@ void desenharVasoSanitario(
         0.145f,
         0.205f,
 
-        40
+        24
     );
 
     glPopMatrix();
@@ -417,110 +417,7 @@ void desenharVasoSanitario(
         0.54f
     );
 
-
-    // ========================================================
-    // TAMPA DO VASO LEVANTADA
-    // ========================================================
-
-    aplicarMaterialPorcelana();
-
-
-    glPushMatrix();
-
-
-    glTranslatef(
-        0.0f,
-        0.69f,
-       -0.105f
-    );
-
-
-    glRotatef(
-        90.0f,
-        1.0f,
-        0.0f,
-        0.0f
-    );
-
-
-    desenharDiscoOval(
-        0.215f,
-        0.270f,
-        40
-    );
-
-
-    glPopMatrix();
-
-
-    // Segunda face para dar espessura
-    glPushMatrix();
-
-
-    glTranslatef(
-        0.0f,
-        0.69f,
-       -0.120f
-    );
-
-
-    glRotatef(
-        90.0f,
-        1.0f,
-        0.0f,
-        0.0f
-    );
-
-
-    desenharDiscoOval(
-        0.215f,
-        0.270f,
-        40
-    );
-
-
-    glPopMatrix();
-
-
-    // ========================================================
-    // SUPORTES DA TAMPA
-    // ========================================================
-
-    aplicarMaterialMetal();
-
-
-    desenharCaixa(
-        -0.075f,
-         0.445f,
-        -0.165f,
-
-         0.055f,
-         0.030f,
-         0.045f,
-
-         0.62f,
-         0.62f,
-         0.64f
-    );
-
-
-    desenharCaixa(
-         0.075f,
-         0.445f,
-        -0.165f,
-
-         0.055f,
-         0.030f,
-         0.045f,
-
-         0.62f,
-         0.62f,
-         0.64f
-    );
-
-
     restaurarMaterial();
-
 
     glPopMatrix();
 }
