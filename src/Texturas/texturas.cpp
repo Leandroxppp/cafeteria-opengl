@@ -12,6 +12,8 @@ GLuint carregarTexturaBMP(const char* caminho) {
     int altura;
     int canaisDeCor;
 
+    stbi_set_flip_vertically_on_load(1);
+
     // Voce passa o caminho da imagem e ele retorna o local dos pixel e preeche a largura, altura e quantidade de canais da imagem passada
     unsigned char* dados = stbi_load(caminho, &largura, &altura, &canaisDeCor, 0);
 
