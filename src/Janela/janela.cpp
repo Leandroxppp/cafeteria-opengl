@@ -39,10 +39,10 @@ GLFWwindow* obterJanela() {
 
 void obterTamanhoJanela(int* largura, int* altura) {
 
-    if (!janela) {
+    if (!janela) { // a janela não existe
 
-        *largura = 1;
-        *altura = 1;
+        *largura = 1; // valor de seguranca
+        *altura = 1; // valor de seguranca
 
         return;
     }
@@ -53,7 +53,7 @@ void obterTamanhoJanela(int* largura, int* altura) {
         altura
     );
 
-    if (*largura <= 0) {
+    if (*largura <= 0) { // a janela está minimizada
 
         *largura = 1;
     }

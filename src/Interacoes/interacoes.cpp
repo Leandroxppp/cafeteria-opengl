@@ -1,601 +1,290 @@
 #include "interacoes.h"
 #include "../Camera/camera.h"
 
+#include <algorithm>
 #include <cmath>
 
+namespace {
 
 // ============================================================
-// PORTA PRINCIPAL
+// CONSTANTES
 // ============================================================
 
-static float anguloPorta = 0.0f;
-static float anguloAlvoPorta = 0.0f;
+const int QUANTIDADE_CADEIRAS = 6;
 
-static bool portaAberta = false;
+const float ANGULO_PORTA_ABERTA = 90.0f;
+const float VELOCIDADE_PORTA = 150.0f;      // graus por segundo
 
+const float DESLOCAMENTO_CADEIRA = 0.60f;
+const float VELOCIDADE_CADEIRA = 1.5f;      // unidades por segundo
+const float DISTANCIA_MAXIMA_CADEIRA = 1.10f;
 
-// ============================================================
-// PORTA DO BANHEIRO
-// ============================================================
-
-static float anguloPortaBanheiro = 0.0f;
-static float anguloAlvoPortaBanheiro = 0.0f;
-
-static bool portaBanheiroAberta = false;
-
+const float DISTANCIA_MAXIMA_PORTA_BANHEIRO = 1.15f;
+const float PORTA_BANHEIRO_X = 4.80f;
+const float PORTA_BANHEIRO_Z = -2.05f;
 
 // ============================================================
-// CADEIRAS
+// LAYOUT DAS CADEIRAS
 //
-// Indices:
-//
-// 0 = esquerda, Z positivo
-// 1 = esquerda, Z negativo
-//
-// 2 = central, Z positivo
-// 3 = central, Z negativo
-//
-// 4 = direita, Z positivo
-// 5 = direita, Z negativo
+// Cada cadeira guarda sua posicao original, a direcao em que
+// e afastada da mesa e a rotacao usada ao desenha-la.
 // ============================================================
 
-static const int QUANTIDADE_CADEIRAS = 6;
+struct LayoutCadeira {
 
-
-// Posicoes originais
-static const float cadeiraBaseX[QUANTIDADE_CADEIRAS] = {
-
-    -3.0f,
-    -3.0f,
-
-     0.0f,
-     0.0f,
-
-     3.0f,
-     3.0f
+    float x;
+    float z;
+    float direcao;
+    float angulo;
 };
 
+const LayoutCadeira CADEIRAS[QUANTIDADE_CADEIRAS] = {
 
-static const float cadeiraBaseZ[QUANTIDADE_CADEIRAS] = {
+    // Mesa esquerda
+    { -3.0f,  1.2f,  1.0f, 180.0f },
+    { -3.0f, -0.2f, -1.0f,   0.0f },
 
-     1.2f,
-    -0.2f,
+    // Mesa central
+    {  0.0f,  1.2f,  1.0f, 180.0f },
+    {  0.0f, -0.2f, -1.0f,   0.0f },
 
-     1.2f,
-    -0.2f,
-
-     1.2f,
-    -0.2f
+    // Mesa direita
+    {  3.0f,  1.2f,  1.0f, 180.0f },
+    {  3.0f, -0.2f, -1.0f,   0.0f }
 };
 
-
-// Direcao na qual cada cadeira e puxada.
-//
-// Cadeiras que ficam em Z positivo:
-// afastam ainda mais para +Z.
-//
-// Cadeiras em Z negativo:
-// afastam para -Z.
-static const float direcaoCadeira[QUANTIDADE_CADEIRAS] = {
-
-     1.0f,
-    -1.0f,
-
-     1.0f,
-    -1.0f,
-
-     1.0f,
-    -1.0f
-};
-
-
-// Estado individual de cada cadeira
-static float deslocamentoCadeira[QUANTIDADE_CADEIRAS];
-static float deslocamentoAlvoCadeira[QUANTIDADE_CADEIRAS];
-
-static bool cadeiraPuxada[QUANTIDADE_CADEIRAS];
-
-
 // ============================================================
-// ILUMINACAO
+// ESTADO
 // ============================================================
 
-static bool luzLigada = true;
+float anguloPorta = 0.0f;
+float anguloAlvoPorta = 0.0f;
+bool portaAberta = false;
 
+float anguloPortaBanheiro = 0.0f;
+float anguloAlvoPortaBanheiro = 0.0f;
+bool portaBanheiroAberta = false;
+
+float deslocamentoCadeira[QUANTIDADE_CADEIRAS] = {};
+float deslocamentoAlvoCadeira[QUANTIDADE_CADEIRAS] = {};
+bool cadeiraPuxada[QUANTIDADE_CADEIRAS] = {};
+
+bool luzLigada = true;
 
 // ============================================================
-// INICIALIZAR
+// UTILITARIOS
 // ============================================================
 
-void inicializarInteracoes() {
+bool indiceValido(int indice) {
 
-    // ========================================================
-    // PORTA PRINCIPAL
-    // ========================================================
-
-    anguloPorta = 0.0f;
-    anguloAlvoPorta = 0.0f;
-    portaAberta = false;
-
-
-    // ========================================================
-    // PORTA DO BANHEIRO
-    // ========================================================
-
-    anguloPortaBanheiro = 0.0f;
-    anguloAlvoPortaBanheiro = 0.0f;
-    portaBanheiroAberta = false;
-
-
-    // ========================================================
-    // CADEIRAS
-    // ========================================================
-
-    for (int i = 0; i < QUANTIDADE_CADEIRAS; i++) {
-
-        deslocamentoCadeira[i] = 0.0f;
-        deslocamentoAlvoCadeira[i] = 0.0f;
-
-        cadeiraPuxada[i] = false;
-    }
-
-
-    // ========================================================
-    // LUZ
-    // ========================================================
-
-    luzLigada = true;
+    return indice >= 0 && indice < QUANTIDADE_CADEIRAS;
 }
 
+// Move um valor em direcao ao alvo sem ultrapassa-lo.
+void aproximar(float& valor, float alvo, float passo) {
+
+    if (valor < alvo) {
+
+        valor = std::min(valor + passo, alvo);
+    }
+
+    else if (valor > alvo) {
+
+        valor = std::max(valor - passo, alvo);
+    }
+}
+
+void alternarPorta(bool& aberta, float& anguloAlvo) {
+
+    aberta = !aberta;
+    anguloAlvo = aberta ? ANGULO_PORTA_ABERTA : 0.0f;
+}
 
 // ============================================================
-// DISTANCIA ENTRE JOGADOR E CADEIRA
+// CADEIRA MAIS PROXIMA
 // ============================================================
 
-static float calcularDistanciaCadeira(
+float calcularDistanciaCadeira(
     int indice,
     float jogadorX,
     float jogadorZ
 ) {
 
-    float cadeiraX =
-        cadeiraBaseX[indice];
+    const float dx =
+        jogadorX - CADEIRAS[indice].x;
 
+    const float dz =
+        jogadorZ - obterCadeiraZ(indice);
 
-    float cadeiraZ =
-        cadeiraBaseZ[indice] +
-        deslocamentoCadeira[indice];
-
-
-    float dx =
-        jogadorX - cadeiraX;
-
-    float dz =
-        jogadorZ - cadeiraZ;
-
-
-    return sqrtf(
-        dx * dx +
-        dz * dz
-    );
+    return std::sqrt(dx * dx + dz * dz);
 }
 
-
-// ============================================================
-// PROCURAR CADEIRA MAIS PROXIMA
-// ============================================================
-
-static int encontrarCadeiraMaisProxima(
+int encontrarCadeiraMaisProxima(
     float jogadorX,
     float jogadorZ
 ) {
 
-    int cadeiraMaisProxima = -1;
-
-    float menorDistancia = 999.0f;
-
+    int maisProxima = -1;
+    float menorDistancia = DISTANCIA_MAXIMA_CADEIRA;
 
     for (int i = 0; i < QUANTIDADE_CADEIRAS; i++) {
 
-        float distancia =
-            calcularDistanciaCadeira(
-                i,
-                jogadorX,
-                jogadorZ
-            );
-
+        const float distancia =
+            calcularDistanciaCadeira(i, jogadorX, jogadorZ);
 
         if (distancia < menorDistancia) {
 
-            menorDistancia =
-                distancia;
-
-            cadeiraMaisProxima =
-                i;
+            menorDistancia = distancia;
+            maisProxima = i;
         }
     }
 
-
-    // O jogador precisa realmente estar
-    // perto da cadeira.
-    const float distanciaMaxima = 1.10f;
-
-
-    if (menorDistancia > distanciaMaxima) {
-
-        return -1;
-    }
-
-
-    return cadeiraMaisProxima;
+    return maisProxima;
 }
 
+void interagirComCadeira(int indice) {
 
-// ============================================================
-// INTERAGIR COM CADEIRA
-// ============================================================
-
-static void interagirComCadeira(
-    int indice
-) {
-
-    if (
-        indice < 0 ||
-        indice >= QUANTIDADE_CADEIRAS
-    ) {
+    if (!indiceValido(indice)) {
 
         return;
     }
 
+    cadeiraPuxada[indice] = !cadeiraPuxada[indice];
 
-    cadeiraPuxada[indice] =
-        !cadeiraPuxada[indice];
-
-
-    if (cadeiraPuxada[indice]) {
-
-        // Afasta aproximadamente 60 cm da mesa.
-        deslocamentoAlvoCadeira[indice] =
-            direcaoCadeira[indice] *
-            0.60f;
-    }
-
-    else {
-
-        // Volta para a posicao original.
-        deslocamentoAlvoCadeira[indice] =
-            0.0f;
-    }
+    deslocamentoAlvoCadeira[indice] =
+        cadeiraPuxada[indice]
+            ? CADEIRAS[indice].direcao * DESLOCAMENTO_CADEIRA
+            : 0.0f;
 }
 
-
 // ============================================================
-// JOGADOR PERTO DA PORTA DO BANHEIRO
+// PORTA DO BANHEIRO
 // ============================================================
 
 bool jogadorPertoPortaBanheiro() {
 
-    float jogadorX =
-        obterCameraX();
+    const float dx =
+        obterCameraX() - PORTA_BANHEIRO_X;
 
-    float jogadorZ =
-        obterCameraZ();
+    const float dz =
+        obterCameraZ() - PORTA_BANHEIRO_Z;
 
-
-    // Centro aproximado do vao do banheiro.
-    const float portaX =
-        4.80f;
-
-    const float portaZ =
-       -2.05f;
-
-
-    float dx =
-        jogadorX - portaX;
-
-    float dz =
-        jogadorZ - portaZ;
-
-
-    const float distanciaMaxima =
-        1.15f;
-
-
-    return (
-        dx * dx +
-        dz * dz
-    ) <= (
-        distanciaMaxima *
-        distanciaMaxima
-    );
+    return
+        dx * dx + dz * dz <= // teorema de pitagoras
+        DISTANCIA_MAXIMA_PORTA_BANHEIRO *
+        DISTANCIA_MAXIMA_PORTA_BANHEIRO;
 }
-
-
-// ============================================================
-// ALTERNAR PORTA DO BANHEIRO
-// ============================================================
 
 void alternarPortaBanheiro() {
 
-    portaBanheiroAberta =
-        !portaBanheiroAberta;
+    alternarPorta(
+        portaBanheiroAberta,
+        anguloAlvoPortaBanheiro
+    );
+}
+
+} // namespace
 
 
-    if (portaBanheiroAberta) {
+// INICIALIZACAO
+void inicializarInteracoes() {
 
-        anguloAlvoPortaBanheiro =
-            90.0f;
+    anguloPorta = 0.0f;
+    anguloAlvoPorta = 0.0f;
+    portaAberta = false;
+
+    anguloPortaBanheiro = 0.0f;
+    anguloAlvoPortaBanheiro = 0.0f;
+    portaBanheiroAberta = false;
+
+    for (int i = 0; i < QUANTIDADE_CADEIRAS; i++) {
+
+        deslocamentoCadeira[i] = 0.0f;
+        deslocamentoAlvoCadeira[i] = 0.0f;
+        cadeiraPuxada[i] = false;
     }
 
-    else {
-
-        anguloAlvoPortaBanheiro =
-            0.0f;
-    }
+    luzLigada = true;
 }
 
 
-// ============================================================
-// TENTAR INTERAGIR
-// ============================================================
 
+// INTERACAO
 void tentarInteragir() {
 
-    float jogadorX =
-        obterCameraX();
+    const float jogadorX = obterCameraX();
+    const float jogadorZ = obterCameraZ();
 
-    float jogadorZ =
-        obterCameraZ();
-
-
-    // ========================================================
-    // PORTA DO BANHEIRO
-    //
-    // Verificamos primeiro porque o jogador pode estar
+    // Verificada primeiro porque o jogador pode estar
     // exatamente na entrada do banheiro.
-    // ========================================================
-
     if (jogadorPertoPortaBanheiro()) {
 
         alternarPortaBanheiro();
-
         return;
     }
 
-
-    // ========================================================
-    // PORTA PRINCIPAL
-    // ========================================================
-
-    bool pertoDaPorta =
+    const bool pertoDaPorta =
         jogadorX > -1.8f &&
         jogadorX <  1.8f &&
         jogadorZ >  2.0f;
 
-
     if (pertoDaPorta) {
 
-        portaAberta =
-            !portaAberta;
-
-
-        if (portaAberta) {
-
-            anguloAlvoPorta =
-                90.0f;
-        }
-
-        else {
-
-            anguloAlvoPorta =
-                0.0f;
-        }
-
-
+        alternarPorta(portaAberta, anguloAlvoPorta);
         return;
     }
 
-
-    // ========================================================
-    // INTERRUPTOR
-    // ========================================================
-
-    bool pertoDoInterruptor =
+    const bool pertoDoInterruptor =
         jogadorX > 4.6f &&
         jogadorZ > 1.8f &&
         jogadorZ < 3.7f;
 
-
     if (pertoDoInterruptor) {
 
-        luzLigada =
-            !luzLigada;
-
+        luzLigada = !luzLigada;
         return;
     }
 
-
-    // ========================================================
-    // CADEIRAS
-    //
-    // Procura automaticamente a cadeira mais proxima.
-    // ========================================================
-
-    int cadeira =
-        encontrarCadeiraMaisProxima(
-            jogadorX,
-            jogadorZ
-        );
-
+    const int cadeira =
+        encontrarCadeiraMaisProxima(jogadorX, jogadorZ);
 
     if (cadeira != -1) {
 
-        interagirComCadeira(
-            cadeira
+        interagirComCadeira(cadeira);
+    }
+}
+
+// ============================================================
+// ANIMACOES
+// ============================================================
+
+void atualizarInteracoes(float deltaTempo) {
+
+    const float passoPorta =
+        VELOCIDADE_PORTA * deltaTempo;
+
+    const float passoCadeira =
+        VELOCIDADE_CADEIRA * deltaTempo;
+
+    aproximar(anguloPorta, anguloAlvoPorta, passoPorta);
+    aproximar(
+        anguloPortaBanheiro,
+        anguloAlvoPortaBanheiro,
+        passoPorta
+    );
+
+    for (int i = 0; i < QUANTIDADE_CADEIRAS; i++) {
+
+        aproximar(
+            deslocamentoCadeira[i],
+            deslocamentoAlvoCadeira[i],
+            passoCadeira
         );
     }
 }
 
-
 // ============================================================
-// ATUALIZAR INTERACOES
-// ============================================================
-
-void atualizarInteracoes() {
-
-    // ========================================================
-    // PORTA PRINCIPAL
-    // ========================================================
-
-    const float velocidadePorta =
-        2.5f;
-
-
-    if (anguloPorta < anguloAlvoPorta) {
-
-        anguloPorta +=
-            velocidadePorta;
-
-
-        if (
-            anguloPorta >
-            anguloAlvoPorta
-        ) {
-
-            anguloPorta =
-                anguloAlvoPorta;
-        }
-    }
-
-    else if (
-        anguloPorta >
-        anguloAlvoPorta
-    ) {
-
-        anguloPorta -=
-            velocidadePorta;
-
-
-        if (
-            anguloPorta <
-            anguloAlvoPorta
-        ) {
-
-            anguloPorta =
-                anguloAlvoPorta;
-        }
-    }
-
-
-    // ========================================================
-    // PORTA DO BANHEIRO
-    // ========================================================
-
-    const float velocidadePortaBanheiro =
-        2.5f;
-
-
-    if (
-        anguloPortaBanheiro <
-        anguloAlvoPortaBanheiro
-    ) {
-
-        anguloPortaBanheiro +=
-            velocidadePortaBanheiro;
-
-
-        if (
-            anguloPortaBanheiro >
-            anguloAlvoPortaBanheiro
-        ) {
-
-            anguloPortaBanheiro =
-                anguloAlvoPortaBanheiro;
-        }
-    }
-
-    else if (
-        anguloPortaBanheiro >
-        anguloAlvoPortaBanheiro
-    ) {
-
-        anguloPortaBanheiro -=
-            velocidadePortaBanheiro;
-
-
-        if (
-            anguloPortaBanheiro <
-            anguloAlvoPortaBanheiro
-        ) {
-
-            anguloPortaBanheiro =
-                anguloAlvoPortaBanheiro;
-        }
-    }
-
-
-    // ========================================================
-    // CADEIRAS
-    // ========================================================
-
-    const float velocidadeCadeira =
-        0.025f;
-
-
-    for (int i = 0; i < QUANTIDADE_CADEIRAS; i++) {
-
-        // ----------------------------------------------------
-        // PRECISA AUMENTAR
-        // ----------------------------------------------------
-
-        if (
-            deslocamentoCadeira[i] <
-            deslocamentoAlvoCadeira[i]
-        ) {
-
-            deslocamentoCadeira[i] +=
-                velocidadeCadeira;
-
-
-            if (
-                deslocamentoCadeira[i] >
-                deslocamentoAlvoCadeira[i]
-            ) {
-
-                deslocamentoCadeira[i] =
-                    deslocamentoAlvoCadeira[i];
-            }
-        }
-
-
-        // ----------------------------------------------------
-        // PRECISA DIMINUIR
-        // ----------------------------------------------------
-
-        else if (
-            deslocamentoCadeira[i] >
-            deslocamentoAlvoCadeira[i]
-        ) {
-
-            deslocamentoCadeira[i] -=
-                velocidadeCadeira;
-
-
-            if (
-                deslocamentoCadeira[i] <
-                deslocamentoAlvoCadeira[i]
-            ) {
-
-                deslocamentoCadeira[i] =
-                    deslocamentoAlvoCadeira[i];
-            }
-        }
-    }
-}
-
-
-// ============================================================
-// PORTA PRINCIPAL
+// GETTERS
 // ============================================================
 
 float obterAnguloPorta() {
@@ -603,41 +292,32 @@ float obterAnguloPorta() {
     return anguloPorta;
 }
 
-
-// ============================================================
-// PORTA DO BANHEIRO
-// ============================================================
-
 float obterAnguloPortaBanheiro() {
 
     return anguloPortaBanheiro;
 }
 
+int quantidadeCadeiras() {
 
-// ============================================================
-// CADEIRAS
-// ============================================================
-
-float obterDeslocamentoCadeira(
-    int indice
-) {
-
-    if (
-        indice < 0 ||
-        indice >= QUANTIDADE_CADEIRAS
-    ) {
-
-        return 0.0f;
-    }
-
-
-    return deslocamentoCadeira[indice];
+    return QUANTIDADE_CADEIRAS;
 }
 
+float obterCadeiraX(int indice) {
 
-// ============================================================
-// ILUMINACAO
-// ============================================================
+    return indiceValido(indice) ? CADEIRAS[indice].x : 0.0f;
+}
+
+float obterCadeiraZ(int indice) {
+
+    return indiceValido(indice)
+        ? CADEIRAS[indice].z + deslocamentoCadeira[indice]
+        : 0.0f;
+}
+
+float obterAnguloCadeira(int indice) {
+
+    return indiceValido(indice) ? CADEIRAS[indice].angulo : 0.0f;
+}
 
 bool luzEstaLigada() {
 

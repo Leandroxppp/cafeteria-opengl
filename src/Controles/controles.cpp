@@ -2,17 +2,36 @@
 
 #include <GLFW/glfw3.h>
 
+#include <algorithm>
+#include <iterator>
+
 #include "../Camera/camera.h"
 #include "../Interacoes/interacoes.h"
 
-static bool teclas[GLFW_KEY_LAST + 1] = { false };
+namespace { 
 
-// Ultima posicao recebida do mouse.
-// O primeiro evento apenas registra a referencia.
-static double ultimoX = 0.0;
-static double ultimoY = 0.0;
-static bool temUltimo = false;
+    const float VELOCIDADE_MOVIMENTO = 3.6f;  // unidades por segundo
+    const float VELOCIDADE_ROTACAO = 90.0f;   // graus por segundo
 
+    bool teclas[GLFW_KEY_LAST + 1] = { false };
+
+    // Ultima posicao recebida do mouse. O primeiro evento apenas
+    // registra a referencia para calcular o proximo delta.
+    double ultimoX = 0.0;
+    double ultimoY = 0.0;
+    bool temUltimo = false;
+
+    bool teclaAtiva(int tecla) {
+
+        return
+            tecla >= 0 &&
+            tecla <= GLFW_KEY_LAST &&
+            teclas[tecla];
+    }
+}
+
+
+// TECLADO
 void teclaPressionada(int tecla) {
 
     if (tecla < 0 || tecla > GLFW_KEY_LAST) {
@@ -41,16 +60,16 @@ void teclaSolta(int tecla) {
 
 void soltarTodasAsTeclas() {
 
-    for (
-        int i = 0;
-        i <= GLFW_KEY_LAST;
-        i++
-    ) {
-
-        teclas[i] = false;
-    }
+    std::fill(
+        std::begin(teclas),
+        std::end(teclas),
+        false
+    );
 }
 
+
+
+// MOUSE
 void redefinirMouse() {
 
     temUltimo = false;
@@ -63,7 +82,6 @@ void moverMouse(double x, double y) {
         ultimoX = x;
         ultimoY = y;
         temUltimo = true;
-
         return;
     }
 
@@ -76,6 +94,9 @@ void moverMouse(double x, double y) {
     ultimoY = y;
 }
 
+
+
+// ATUALIZACAO CONTINUA
 void atualizarControles(float deltaTempo) {
 
     if (deltaTempo <= 0.0f) {
@@ -83,66 +104,18 @@ void atualizarControles(float deltaTempo) {
         return;
     }
 
-    // ========================================================
-    // MOVIMENTO (unidades por segundo)
-    // ========================================================
+    const float passo = VELOCIDADE_MOVIMENTO * deltaTempo;
 
-    const float velocidade =
-        3.6f;
+    if (teclaAtiva(GLFW_KEY_W)) moverCameraFrente(passo);
+    if (teclaAtiva(GLFW_KEY_S)) moverCameraTras(passo);
+    if (teclaAtiva(GLFW_KEY_A)) moverCameraEsquerda(passo);
+    if (teclaAtiva(GLFW_KEY_D)) moverCameraDireita(passo);
 
-    const float passo =
-        velocidade * deltaTempo;
+    // Setas como alternativa ao mouse (funcionam no Wayland).
+    const float giro = VELOCIDADE_ROTACAO * deltaTempo;
 
-
-    if (teclas[GLFW_KEY_W]) {
-
-        moverCameraFrente(passo);
-    }
-
-    if (teclas[GLFW_KEY_S]) {
-
-        moverCameraTras(passo);
-    }
-
-    if (teclas[GLFW_KEY_A]) {
-
-        moverCameraEsquerda(passo);
-    }
-
-    if (teclas[GLFW_KEY_D]) {
-
-        moverCameraDireita(passo);
-    }
-
-
-    // ========================================================
-    // ROTACAO PELAS SETAS (graus por segundo)
-    //
-    // Fallback que funciona em qualquer sessao, inclusive
-    // Wayland, onde nao ha captura absoluta do ponteiro.
-    // ========================================================
-
-    const float giro =
-        90.0f * deltaTempo;
-
-
-    if (teclas[GLFW_KEY_LEFT]) {
-
-        girarCamera(giro, 0.0f);
-    }
-
-    if (teclas[GLFW_KEY_RIGHT]) {
-
-        girarCamera(-giro, 0.0f);
-    }
-
-    if (teclas[GLFW_KEY_UP]) {
-
-        girarCamera(0.0f, giro);
-    }
-
-    if (teclas[GLFW_KEY_DOWN]) {
-
-        girarCamera(0.0f, -giro);
-    }
+    if (teclaAtiva(GLFW_KEY_LEFT))  girarCamera( giro, 0.0f);
+    if (teclaAtiva(GLFW_KEY_RIGHT)) girarCamera(-giro, 0.0f);
+    if (teclaAtiva(GLFW_KEY_UP))    girarCamera(0.0f,  giro);
+    if (teclaAtiva(GLFW_KEY_DOWN))  girarCamera(0.0f, -giro);
 }

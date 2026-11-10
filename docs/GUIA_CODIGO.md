@@ -53,7 +53,7 @@ desenhada com primitivas do OpenGL de função fixa (`glBegin`, `glEnd`, `glVert
 | GLFW 3.4 | Janela, contexto OpenGL, teclado, mouse e foco |
 | stb_image | Decodificação das imagens BMP |
 | CMake 3.20+ | Configuração e compilação |
-| GCC/g++ | Compilador |
+| GCC/g++ (ou MinGW-w64 no Windows) | Compilador |
 
 > **Por que GLFW e não GLUT?**
 > O GLUT/freeglut não oferece captura relativa confiável do mouse no Wayland.
@@ -1103,11 +1103,41 @@ O vão da porta do banheiro fica na parede frontal, em torno de `X = 4.80`.
 
 ## 13. Build, execução e diagnóstico
 
-### 13.1 Dependências no Fedora
+### 13.1 Instalação das dependências
+
+A compilação é feita exclusivamente com CMake. O projeto exige **GLFW 3.4**.
+
+**Linux — Fedora**
 
 ```bash
-sudo dnf install gcc-c++ cmake glfw-devel mesa-libGL-devel mesa-libGLU-devel
+sudo dnf install gcc-c++ make cmake glfw-devel mesa-libGL-devel mesa-libGLU-devel
 ```
+
+**Linux — Ubuntu / Debian (24.04 ou superior)**
+
+```bash
+sudo apt update
+sudo apt install build-essential cmake libglfw3-dev libgl1-mesa-dev libglu1-mesa-dev
+```
+
+**Linux — Arch Linux**
+
+```bash
+sudo pacman -S --needed base-devel cmake glfw mesa glu
+```
+
+**Windows — MSYS2 (terminal UCRT64)**
+
+```bash
+pacman -S --needed \
+    mingw-w64-ucrt-x86_64-toolchain \
+    mingw-w64-ucrt-x86_64-cmake \
+    mingw-w64-ucrt-x86_64-glfw \
+    mingw-w64-ucrt-x86_64-glu \
+    mingw-w64-ucrt-x86_64-ninja
+```
+
+> O README traz o passo a passo completo, incluindo a configuração do `PATH` no Windows e as dependências de execução.
 
 ### 13.2 CMake
 
@@ -1130,10 +1160,22 @@ add_executable(cafeteria_opengl ${CAFETERIA_SOURCES})
 
 ### 13.3 Compilar e executar
 
+A compilação é feita exclusivamente com CMake.
+
+**Linux**
+
 ```bash
 cmake -S . -B build
 cmake --build build
 ./build/cafeteria_opengl
+```
+
+**Windows (terminal MSYS2 UCRT64)**
+
+```bash
+cmake -S . -B build -G Ninja
+cmake --build build
+./build/cafeteria_opengl.exe
 ```
 
 Também é possível executar de dentro de `build/`:
@@ -1143,17 +1185,7 @@ cd build
 ./cafeteria_opengl
 ```
 
-### 13.4 Compilação manual
-
-```bash
-mkdir -p build
-g++ -std=c++14 $(find src -name '*.cpp') \
-    -o build/cafeteria_opengl \
-    $(pkg-config --cflags --libs glfw3) \
-    -lGL -lGLU
-```
-
-### 13.5 Diagnóstico rápido
+### 13.4 Diagnóstico rápido
 
 | Sintoma | Causa provável | Solução |
 |---|---|---|
@@ -1165,7 +1197,7 @@ g++ -std=c++14 $(find src -name '*.cpp') \
 | Build desatualizado | Arquivos antigos no `build/` | `rm -rf build` e reconfigure |
 | Contexto OpenGL falha | Driver/Mesa incompatível | Verifique `glxinfo -B` e o suporte a OpenGL 2.1 |
 
-### 13.6 Verificação de dependências
+### 13.5 Verificação de dependências
 
 ```bash
 pkg-config --modversion glfw3

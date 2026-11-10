@@ -28,120 +28,36 @@ static void desenharChao() {
             );
     }
 
-
-    // ========================================================
     // PISO COM TEXTURA
-    // ========================================================
-
     if (texturaPiso != 0) {
 
         glEnable(GL_TEXTURE_2D);
 
-        glBindTexture(
-            GL_TEXTURE_2D,
-            texturaPiso
-        );
-
-
+        glBindTexture(GL_TEXTURE_2D, texturaPiso);    
         // Faz a textura repetir pelo piso
         // em vez de esticar uma unica imagem.
-        glTexParameteri(
-            GL_TEXTURE_2D,
-            GL_TEXTURE_WRAP_S,
-            GL_REPEAT
-        );
-
-        glTexParameteri(
-            GL_TEXTURE_2D,
-            GL_TEXTURE_WRAP_T,
-            GL_REPEAT
-        );
-
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
         // Branco para preservar as cores
         // originais da textura.
-        glColor3f(
-            1.0f,
-            1.0f,
-            1.0f
-        );
-
-
+        glColor3f(1.0f, 1.0f, 1.0f);
         glBegin(GL_QUADS);
-
-
             // Normal apontando para cima
-            glNormal3f(
-                0.0f,
-                1.0f,
-                0.0f
-            );
-
-
+            glNormal3f(0.0f, 1.0f, 0.0f);
             // Canto traseiro esquerdo
-            glTexCoord2f(
-                0.0f,
-                0.0f
-            );
-
-            glVertex3f(
-                -6.0f,
-                 0.0f,
-                -4.0f
-            );
-
-
+            glTexCoord2f(0.0f, 0.0f); glVertex3f(-6.0f, 0.0f, -4.0f);
             // Canto traseiro direito
-            //
             // 6 repeticoes no eixo X
-            glTexCoord2f(
-                6.0f,
-                0.0f
-            );
-
-            glVertex3f(
-                 6.0f,
-                 0.0f,
-                -4.0f
-            );
-
-
+            glTexCoord2f(6.0f, 0.0f); glVertex3f( 6.0f, 0.0f, -4);
             // Canto frontal direito
-            //
             // 4 repeticoes no eixo Z
-            glTexCoord2f(
-                6.0f,
-                4.0f
-            );
-
-            glVertex3f(
-                 6.0f,
-                 0.0f,
-                 4.0f
-            );
-
-
+            glTexCoord2f(6.0f, 4.0f); glVertex3f( 6.0f, 0.0f, 4.0f);
             // Canto frontal esquerdo
-            glTexCoord2f(
-                0.0f,
-                4.0f
-            );
-
-            glVertex3f(
-                -6.0f,
-                 0.0f,
-                 4.0f
-            );
-
-
+            glTexCoord2f(0.0f, 4.0f); glVertex3f(-6.0f, 0.0f, 4.0f);
         glEnd();
 
-
-        glBindTexture(
-            GL_TEXTURE_2D,
-            0
-        );
-
+        glBindTexture(GL_TEXTURE_2D, 0);
         glDisable(GL_TEXTURE_2D);
     }
 

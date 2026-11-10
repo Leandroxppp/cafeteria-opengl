@@ -29,8 +29,6 @@
 #include "../Objetos/Mesa/mesa.h"
 #include "../Objetos/Cadeira/cadeira.h"
 
-// #include <windows.h>
-#include <GL/gl.h>
 #include <cmath>
 
 
@@ -45,19 +43,12 @@ static void configurarPerspectiva(
     double zFar
 ) {
 
-    const double PI =
-        3.14159265358979323846;
+    const double PI = 3.14159265358979323846;
 
+    double altura = 
+        tan((fovY / 2) * (PI / 180)) * zNear;
 
-    double altura =
-        tan(
-            fovY / 360.0 * PI
-        ) * zNear;
-
-
-    double largura =
-        altura * aspect;
-
+    double largura = altura * aspect;
 
     glFrustum(
         -largura,
@@ -71,7 +62,7 @@ static void configurarPerspectiva(
 
 
 // ============================================================
-// CONFIGURAR LUZ DE UMA LUMINARIA
+// CONFIGURAR LUZ DE UMA LUMINARIA (setando propriedades)
 // ============================================================
 
 static void configurarLuzLuminaria(
@@ -81,15 +72,17 @@ static void configurarLuzLuminaria(
     float z
 ) {
 
-    GLfloat posicao[] = {
+    GLfloat posicao[] = { // ONDE ela está
         x,
         y,
         z,
-        1.0f
+        1.0f // w = 1
+        // w = 1: é uma posição (os valores anteriores indicam a coordenadas da luz) (variados angulos)
+        // w = 0: é uma direção (os valores anteriores indicam que a luz vem dessa direcao, os raios de luz seriam paralelos) (mesmo angulo, incidencia)
     };
 
 
-    GLfloat direcao[] = {
+    GLfloat direcao[] = {   // PARA ONDE aponta (para baixo)
          0.0f,
         -1.0f,
          0.0f
@@ -103,8 +96,7 @@ static void configurarLuzLuminaria(
         1.0f
     };
 
-
-    GLfloat difusa[] = {
+    GLfloat difusa[] = { // a COR da luz (amarelada)
         1.00f,
         0.90f,
         0.65f,
@@ -112,16 +104,14 @@ static void configurarLuzLuminaria(
     };
 
 
-    GLfloat especular[] = {
+    GLfloat especular[] = { // a cor do brilho em superfícies polidas
         0.55f,
         0.45f,
         0.30f,
         1.0f
-    };
-
+    };   
 
     glEnable(luz);
-
 
     glLightfv(
         luz,
@@ -157,40 +147,15 @@ static void configurarLuzLuminaria(
         especular
     );
 
-
-    glLightf(
-        luz,
-        GL_SPOT_CUTOFF,
-        48.0f
-    );
+    // abertura do cone
+    glLightf(luz, GL_SPOT_CUTOFF,   38.0f);   // o cone abre 48° para cada lado do eixo
+    glLightf(luz, GL_SPOT_EXPONENT,  2.0f);   // o centro do cone é mais forte que a borda
 
 
-    glLightf(
-        luz,
-        GL_SPOT_EXPONENT,
-        8.0f
-    );
-
-
-    glLightf(
-        luz,
-        GL_CONSTANT_ATTENUATION,
-        1.0f
-    );
-
-
-    glLightf(
-        luz,
-        GL_LINEAR_ATTENUATION,
-        0.10f
-    );
-
-
-    glLightf(
-        luz,
-        GL_QUADRATIC_ATTENUATION,
-        0.025f
-    );
+    // a luz enfraquece com a distância: 1 / (1 + 0,10·d + 0,025·d²)
+    glLightf(luz, GL_CONSTANT_ATTENUATION,  1.0f);
+    glLightf(luz, GL_LINEAR_ATTENUATION,    0.10f);
+    glLightf(luz, GL_QUADRATIC_ATTENUATION, 0.025f);
 }
 
 
@@ -200,7 +165,7 @@ static void configurarLuzLuminaria(
 
 static void configurarIluminacao() {
 
-    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHTING); // habilita o cálculo de iluminação
 
     glEnable(GL_NORMALIZE);
 
@@ -213,10 +178,10 @@ static void configurarIluminacao() {
     );
 
 
-    glLightModeli(
-        GL_LIGHT_MODEL_TWO_SIDE,
-        GL_TRUE
-    );
+    // glLightModeli(
+    //     GL_LIGHT_MODEL_TWO_SIDE,
+    //     GL_TRUE
+    // );
 
 
     // ========================================================
@@ -225,18 +190,15 @@ static void configurarIluminacao() {
 
     if (luzEstaLigada()) {
 
-        GLfloat ambienteGlobal[] = {
-            0.23f,
-            0.21f,
-            0.18f,
-            1.0f
-        };
+        // GLfloat ambienteGlobal[] = {0.15f, 0.105f, 0.09f, 1.0f}; // R G B A
+        GLfloat ambienteGlobal[] = {0.23f, 0.21f, 0.18f, 1.0f};
+        // GLfloat ambienteGlobal[] = { 0.42f, 0.43f, 0.45f, 1.0f };
 
 
         glLightModelfv(
             GL_LIGHT_MODEL_AMBIENT,
             ambienteGlobal
-        );
+        ); // configura luz ambiente global
 
 
         // ====================================================
@@ -244,7 +206,6 @@ static void configurarIluminacao() {
         // ====================================================
 
         glEnable(GL_LIGHT0);
-
 
         GLfloat posicaoGeral[] = {
             0.0f,
@@ -254,7 +215,7 @@ static void configurarIluminacao() {
         };
 
 
-        GLfloat ambienteGeral[] = {
+        GLfloat ambienteGeral[] = { // chega a todos os pontos de todas as superfícies, com a mesma intensidade
             0.0f,
             0.0f,
             0.0f,
@@ -391,32 +352,13 @@ static void desenharJanelaDaCafeteria() {
 
 static void desenharLuminarias() {
 
-    bool ligada =
-        luzEstaLigada();
+    const float posicoesX[] = { -3.0f, 0.0f, 3.0f };
+    const bool ligada = luzEstaLigada();
 
+    for (float x : posicoesX) {
 
-    desenharLuminaria(
-        -3.0f,
-         2.98f,
-         0.50f,
-         ligada
-    );
-
-
-    desenharLuminaria(
-         0.0f,
-         2.98f,
-         0.50f,
-         ligada
-    );
-
-
-    desenharLuminaria(
-         3.0f,
-         2.98f,
-         0.50f,
-         ligada
-    );
+        desenharLuminaria(x, 2.98f, 0.50f, ligada);
+    }
 }
 
 
@@ -525,25 +467,12 @@ static void desenharPortaDoBanheiro() {
 
 static void desenharMesas() {
 
-    desenharMesa(
-        -3.0f,
-         0.5f,
-         0.0f
-    );
+    const float posicoesX[] = { -3.0f, 0.0f, 3.0f };
 
+    for (float x : posicoesX) {
 
-    desenharMesa(
-         0.0f,
-         0.5f,
-         0.0f
-    );
-
-
-    desenharMesa(
-         3.0f,
-         0.5f,
-         0.0f
-    );
+        desenharMesa(x, 0.5f, 0.0f);
+    }
 }
 
 
@@ -647,58 +576,14 @@ static void desenharMaquinaCafeBalcao() {
 
 static void desenharCadeiras() {
 
-    // ========================================================
-    // MESA ESQUERDA
-    // ========================================================
+    for (int i = 0; i < quantidadeCadeiras(); i++) {
 
-    desenharCadeira(
-        -3.0f,
-         1.2f + obterDeslocamentoCadeira(0),
-         180.0f
-    );
-
-
-    desenharCadeira(
-        -3.0f,
-        -0.2f + obterDeslocamentoCadeira(1),
-         0.0f
-    );
-
-
-    // ========================================================
-    // MESA CENTRAL
-    // ========================================================
-
-    desenharCadeira(
-         0.0f,
-         1.2f + obterDeslocamentoCadeira(2),
-         180.0f
-    );
-
-
-    desenharCadeira(
-         0.0f,
-        -0.2f + obterDeslocamentoCadeira(3),
-         0.0f
-    );
-
-
-    // ========================================================
-    // MESA DIREITA
-    // ========================================================
-
-    desenharCadeira(
-         3.0f,
-         1.2f + obterDeslocamentoCadeira(4),
-         180.0f
-    );
-
-
-    desenharCadeira(
-         3.0f,
-        -0.2f + obterDeslocamentoCadeira(5),
-         0.0f
-    );
+        desenharCadeira(
+            obterCadeiraX(i),
+            obterCadeiraZ(i),
+            obterAnguloCadeira(i)
+        );
+    }
 }
 
 // RENDERIZAR CENA
@@ -708,17 +593,9 @@ void renderizarCena() {
     int largura = 1;
     int altura = 1;
 
-    obterTamanhoJanela(
-        &largura,
-        &altura
-    );
+    // obterTamanhoJanela ja garante valores maiores que zero
+    obterTamanhoJanela(&largura, &altura);
 
-    if (altura <= 0) {
-
-        altura = 1;
-    }
-
-    // VIEWPORT
     glViewport(
         0,
         0,
@@ -726,7 +603,6 @@ void renderizarCena() {
         altura
     );
 
-    // FUNDO
     glClearColor(
         0.08f,
         0.08f,
@@ -734,13 +610,9 @@ void renderizarCena() {
         1.0f
     );
 
-    // LIMPAR FRAME
-    glClear(GL_COLOR_BUFFER_BIT |GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // PROJECAO
-    glMatrixMode(
-        GL_PROJECTION
-    );
+    glMatrixMode(GL_PROJECTION);
     
     glLoadIdentity();
     
@@ -749,7 +621,7 @@ void renderizarCena() {
         static_cast<double>(largura) /
         static_cast<double>(altura),
         0.1,
-        100.0
+        14.0
     );
     // ========================================================
 
@@ -811,6 +683,4 @@ void renderizarCena() {
 
     // INTERRUPTOR
     desenharInterruptor(luzEstaLigada());
-
-    trocarBuffers();
 }

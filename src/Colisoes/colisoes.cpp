@@ -4,55 +4,100 @@
 
 #include <cmath>
 
+namespace {
 
 // ============================================================
-// RAIO DA CAMERA
+// GEOMETRIA DE COLISAO
 //
-// Trata o jogador como se ocupasse um pequeno circulo.
-// Isso evita que a camera encoste completamente nos objetos.
+// O jogador e tratado como um circulo de raio RAIO_CAMERA.
+// Cada obstaculo e representado por um retangulo no plano XZ.
 // ============================================================
 
-static const float RAIO_CAMERA = 0.20f;
+const float RAIO_CAMERA = 0.20f;
+const float PI = 3.14159265f;
 
+const float LIMITE_X = 5.75f;
+const float LIMITE_Z_FUNDO = -3.75f;
+const float LIMITE_Z_FRENTE = 3.75f;
+const float VAO_PORTA = 0.45f;
+const float ANGULO_PORTA_LIVRE = 70.0f;
+const float LIMITE_EXTERNO = 4.80f;
+
+const float METADE_CADEIRA = 0.32f;
+
+struct RetanguloXZ {
+
+    float minX;
+    float maxX;
+    float minZ;
+    float maxZ;
+};
+
+const RetanguloXZ BALCAO = {
+    -4.99f, -2.21f,
+    -3.04f, -2.26f
+};
+
+const RetanguloXZ VASO_SANITARIO = {
+    3.86f, 4.64f,
+    -3.84f, -3.05f
+};
+
+const RetanguloXZ PIA_BANHEIRO = {
+    5.34f, 5.90f,
+    -3.52f, -2.58f
+};
+
+const RetanguloXZ MESAS[] = {
+
+    // Mesa esquerda
+    { -3.65f, -2.35f, 0.05f, 0.95f },
+
+    // Mesa central
+    { -0.65f, 0.65f, 0.05f, 0.95f },
+
+    // Mesa direita
+    { 2.35f, 3.65f, 0.05f, 0.95f }
+};
+
+const RetanguloXZ PAREDES_BANHEIRO[] = {
+
+    // Parede esquerda
+    { 3.52f, 3.68f, -4.00f, -2.15f },
+
+    // Parte esquerda da parede frontal (deixa o vao da porta)
+    { 3.60f, 4.25f, -2.28f, -2.12f },
+
+    // Parte direita da parede frontal
+    { 5.33f, 6.00f, -2.28f, -2.12f }
+};
 
 // ============================================================
 // COLISAO COM RETANGULO
-//
-// Verifica se a camera esta dentro de uma caixa no plano XZ.
-// O raio da camera e considerado automaticamente.
 // ============================================================
 
-static bool colideComCaixa(
+bool colideComRetangulo(
     float x,
     float z,
-    float minX,
-    float maxX,
-    float minZ,
-    float maxZ
+    const RetanguloXZ& area
 ) {
 
     return
-        x + RAIO_CAMERA > minX &&
-        x - RAIO_CAMERA < maxX &&
-        z + RAIO_CAMERA > minZ &&
-        z - RAIO_CAMERA < maxZ;
+        x + RAIO_CAMERA > area.minX &&
+        x - RAIO_CAMERA < area.maxX &&
+        z + RAIO_CAMERA > area.minZ &&
+        z - RAIO_CAMERA < area.maxZ;
 }
-
-
-// ============================================================
-// COLISAO COM PAREDES EXTERNAS
-// ============================================================
 
 // ============================================================
 // COLISAO COM A FOLHA DE UMA PORTA ROTACIONADA
 //
-// A folha e representada por um segmento entre a dobradica e
-// a ponta da porta. O raio do jogador e somado a meia espessura
-// da folha para impedir que a camera atravesse a madeira.
+// A folha e um segmento entre a dobradica e a ponta da porta.
+// O raio do jogador e somado a meia espessura da folha.
 // O sinal do angulo deve ser o mesmo usado no glRotatef.
 // ============================================================
 
-static bool colideComFolhaPorta(
+bool colideComFolhaPorta(
     float x,
     float z,
     float dobradicaX,
@@ -62,14 +107,16 @@ static bool colideComFolhaPorta(
     float meiaEspessura
 ) {
 
-    const float PI = 3.14159265f;
     const float radianos = anguloGraus * PI / 180.0f;
 
     // glRotatef(angulo, 0, 1, 0):
     // x' = cos(angulo) * x
     // z' = -sin(angulo) * x
-    const float pontaX = dobradicaX + std::cos(radianos) * largura;
-    const float pontaZ = dobradicaZ - std::sin(radianos) * largura;
+    const float pontaX =
+        dobradicaX + std::cos(radianos) * largura;
+
+    const float pontaZ =
+        dobradicaZ - std::sin(radianos) * largura;
 
     const float segmentoX = pontaX - dobradicaX;
     const float segmentoZ = pontaZ - dobradicaZ;
@@ -77,6 +124,7 @@ static bool colideComFolhaPorta(
         segmentoX * segmentoX + segmentoZ * segmentoZ;
 
     if (comprimentoQuadrado <= 0.000001f) {
+
         return false;
     }
 
@@ -90,193 +138,80 @@ static bool colideComFolhaPorta(
     if (t < 0.0f) t = 0.0f;
     if (t > 1.0f) t = 1.0f;
 
-    const float pontoMaisProximoX = dobradicaX + t * segmentoX;
-    const float pontoMaisProximoZ = dobradicaZ + t * segmentoZ;
+    const float dx =
+        x - (dobradicaX + t * segmentoX);
 
-    const float dx = x - pontoMaisProximoX;
-    const float dz = z - pontoMaisProximoZ;
-    const float raioColisao = RAIO_CAMERA + meiaEspessura;
+    const float dz =
+        z - (dobradicaZ + t * segmentoZ);
+
+    const float raioColisao =
+        RAIO_CAMERA + meiaEspessura;
 
     return dx * dx + dz * dz < raioColisao * raioColisao;
 }
 
+// ============================================================
+// PAREDES EXTERNAS
+// ============================================================
 
-static bool colideComParedesExternas(
-    float x,
-    float z
-) {
+bool colideComParedesExternas(float x, float z) {
 
-    // ========================================================
-    // PAREDE ESQUERDA
-    // ========================================================
-
-    if (x < -5.75f) {
-
-        return true;
-    }
-
-
-    // ========================================================
-    // PAREDE DIREITA
-    // ========================================================
-
-    if (x > 5.75f) {
+    if (
+        x < -LIMITE_X ||
+        x >  LIMITE_X ||
+        z <  LIMITE_Z_FUNDO
+    ) {
 
         return true;
     }
 
+    if (z <= LIMITE_Z_FRENTE) {
 
-    // ========================================================
-    // PAREDE DO FUNDO
-    // ========================================================
+        return false;
+    }
 
-    if (z < -3.75f) {
+    // Na parede da frente so existe passagem pelo vao central.
+    const bool dentroDoVao =
+        x > -VAO_PORTA &&
+        x <  VAO_PORTA;
+
+    if (!dentroDoVao) {
 
         return true;
     }
 
+    // Dentro do vao, a porta precisa estar aberta.
+    if (obterAnguloPorta() < ANGULO_PORTA_LIVRE) {
 
-    // ========================================================
-    // PAREDE DA FRENTE / PORTA PRINCIPAL
-    //
-    // A porta principal fica aproximadamente no centro.
-    //
-    // Quando a porta esta fechada:
-    // o jogador nao pode atravessar.
-    //
-    // Quando esta aberta:
-    // pode passar pelo vao.
-    // ========================================================
+        return true;
+    }
 
-    if (z > 3.75f) {
+    // Evita caminhar infinitamente para fora da cafeteria.
+    return z > LIMITE_EXTERNO;
+}
 
-        bool dentroDoVao =
-            x > -0.45f &&
-            x <  0.45f;
+// ============================================================
+// PAREDES DO BANHEIRO
+// ============================================================
 
+bool colideComParedesBanheiro(float x, float z) {
 
-        // Fora do vao existe parede.
-        if (!dentroDoVao) {
+    for (const RetanguloXZ& parede : PAREDES_BANHEIRO) {
 
-            return true;
-        }
-
-
-        // Dentro do vao, mas a porta ainda esta fechada.
-        if (obterAnguloPorta() < 70.0f) {
-
-            return true;
-        }
-
-
-        // Limite externo.
-        //
-        // Permite sair um pouco pela porta,
-        // mas evita caminhar infinitamente para fora.
-        if (z > 4.80f) {
+        if (colideComRetangulo(x, z, parede)) {
 
             return true;
         }
     }
-
 
     return false;
 }
-
-
-// ============================================================
-// COLISAO COM PAREDES DO BANHEIRO
-//
-// Banheiro:
-//
-// X aproximadamente 3.6 ate 6.0
-// Z aproximadamente -4.0 ate -2.2
-//
-// A entrada fica na parede frontal.
-// ============================================================
-
-static bool colideComParedesBanheiro(
-    float x,
-    float z
-) {
-
-    // ========================================================
-    // PAREDE ESQUERDA DO BANHEIRO
-    // ========================================================
-
-    if (
-        colideComCaixa(
-            x,
-            z,
-
-            3.52f,
-            3.68f,
-
-           -4.00f,
-           -2.15f
-        )
-    ) {
-
-        return true;
-    }
-
-
-    // ========================================================
-    // PARTE ESQUERDA DA PAREDE FRONTAL
-    //
-    // Deixa livre o vao da porta.
-    // ========================================================
-
-    if (
-        colideComCaixa(
-            x,
-            z,
-
-            3.60f,
-            4.25f,
-
-           -2.28f,
-           -2.12f
-        )
-    ) {
-
-        return true;
-    }
-
-
-    // ========================================================
-    // PARTE DIREITA DA PAREDE FRONTAL
-    // ========================================================
-
-    if (
-        colideComCaixa(
-            x,
-            z,
-
-            5.33f,
-            6.00f,
-
-           -2.28f,
-           -2.12f
-        )
-    ) {
-
-        return true;
-    }
-
-
-    return false;
-}
-
 
 // ============================================================
 // PORTA DO BANHEIRO
 // ============================================================
 
-static bool colideComPortaBanheiro(
-    float x,
-    float z
-) {
+bool colideComPortaBanheiro(float x, float z) {
 
     // A dobradica fica em X = 4.79 - 0.492 = 4.298.
     // No modelo, a folha gira com -angulo em torno do eixo Y.
@@ -291,305 +226,37 @@ static bool colideComPortaBanheiro(
     );
 }
 
-
 // ============================================================
-// COLISAO COM O BALCAO
-// ============================================================
-
-static bool colideComBalcao(
-    float x,
-    float z
-) {
-
-    return colideComCaixa(
-        x,
-        z,
-
-       -4.99f,
-       -2.21f,
-
-       -3.04f,
-       -2.26f
-    );
-}
-
-
-// ============================================================
-// COLISAO COM AS MESAS
-// ============================================================
-
-static bool colideComMesas(
-    float x,
-    float z
-) {
-
-    // ========================================================
-    // MESA ESQUERDA
-    // ========================================================
-
-    if (
-        colideComCaixa(
-            x,
-            z,
-
-           -3.65f,
-           -2.35f,
-
-            0.05f,
-            0.95f
-        )
-    ) {
-
-        return true;
-    }
-
-
-    // ========================================================
-    // MESA CENTRAL
-    // ========================================================
-
-    if (
-        colideComCaixa(
-            x,
-            z,
-
-           -0.65f,
-            0.65f,
-
-            0.05f,
-            0.95f
-        )
-    ) {
-
-        return true;
-    }
-
-
-    // ========================================================
-    // MESA DIREITA
-    // ========================================================
-
-    if (
-        colideComCaixa(
-            x,
-            z,
-
-            2.35f,
-            3.65f,
-
-            0.05f,
-            0.95f
-        )
-    ) {
-
-        return true;
-    }
-
-
-    return false;
-}
-
-
-// ============================================================
-// COLISAO COM UMA CADEIRA
-// ============================================================
-
-static bool colideComCadeira(
-    float jogadorX,
-    float jogadorZ,
-    float cadeiraX,
-    float cadeiraZ
-) {
-
-    const float metade =
-        0.32f;
-
-
-    return colideComCaixa(
-        jogadorX,
-        jogadorZ,
-
-        cadeiraX - metade,
-        cadeiraX + metade,
-
-        cadeiraZ - metade,
-        cadeiraZ + metade
-    );
-}
-
-
-// ============================================================
-// COLISAO COM TODAS AS CADEIRAS
+// CADEIRAS
 //
-// A colisao acompanha o movimento individual de cada cadeira.
+// Usa as mesmas posicoes consultadas pela renderizacao, entao a
+// colisao acompanha automaticamente a animacao de cada cadeira.
 // ============================================================
 
-static bool colideComCadeiras(
-    float x,
-    float z
-) {
+bool colideComCadeiras(float x, float z) {
 
-    // ========================================================
-    // MESA ESQUERDA
-    // ========================================================
+    for (int i = 0; i < quantidadeCadeiras(); i++) {
 
-    if (
-        colideComCadeira(
-            x,
-            z,
+        const float cadeiraX = obterCadeiraX(i);
+        const float cadeiraZ = obterCadeiraZ(i);
 
-           -3.0f,
-            1.2f +
-            obterDeslocamentoCadeira(0)
-        )
-    ) {
+        const RetanguloXZ area = {
+            cadeiraX - METADE_CADEIRA,
+            cadeiraX + METADE_CADEIRA,
+            cadeiraZ - METADE_CADEIRA,
+            cadeiraZ + METADE_CADEIRA
+        };
 
-        return true;
+        if (colideComRetangulo(x, z, area)) {
+
+            return true;
+        }
     }
-
-
-    if (
-        colideComCadeira(
-            x,
-            z,
-
-           -3.0f,
-           -0.2f +
-            obterDeslocamentoCadeira(1)
-        )
-    ) {
-
-        return true;
-    }
-
-
-    // ========================================================
-    // MESA CENTRAL
-    // ========================================================
-
-    if (
-        colideComCadeira(
-            x,
-            z,
-
-            0.0f,
-            1.2f +
-            obterDeslocamentoCadeira(2)
-        )
-    ) {
-
-        return true;
-    }
-
-
-    if (
-        colideComCadeira(
-            x,
-            z,
-
-            0.0f,
-           -0.2f +
-            obterDeslocamentoCadeira(3)
-        )
-    ) {
-
-        return true;
-    }
-
-
-    // ========================================================
-    // MESA DIREITA
-    // ========================================================
-
-    if (
-        colideComCadeira(
-            x,
-            z,
-
-            3.0f,
-            1.2f +
-            obterDeslocamentoCadeira(4)
-        )
-    ) {
-
-        return true;
-    }
-
-
-    if (
-        colideComCadeira(
-            x,
-            z,
-
-            3.0f,
-           -0.2f +
-            obterDeslocamentoCadeira(5)
-        )
-    ) {
-
-        return true;
-    }
-
 
     return false;
 }
 
-
-// ============================================================
-// COLISAO COM VASO SANITARIO
-// ============================================================
-
-static bool colideComVasoSanitario(
-    float x,
-    float z
-) {
-
-    // Vaso:
-    //
-    // centro aproximado:
-    // X = 4.25
-    // Z = -3.48
-
-    return colideComCaixa(
-        x,
-        z,
-
-        3.86f,
-        4.64f,
-
-       -3.84f,
-       -3.05f
-    );
-}
-
-
-// ============================================================
-// COLISAO COM PIA DO BANHEIRO
-// ============================================================
-
-static bool colideComPiaBanheiro(
-    float x,
-    float z
-) {
-
-    // A pia foi rotacionada -90 graus.
-    //
-    // Por isso a profundidade original passa
-    // a ocupar principalmente o eixo X,
-    // enquanto a largura ocupa o eixo Z.
-
-    return colideComCaixa(
-        x,
-        z,
-
-        5.34f,
-        5.90f,
-
-       -3.52f,
-       -2.58f
-    );
-}
-
+} // namespace
 
 // ============================================================
 // POSICAO DA CAMERA E VALIDA?
@@ -597,28 +264,14 @@ static bool colideComPiaBanheiro(
 
 bool posicaoCameraValida(float x, float z) {
 
-    // ========================================================
-    // PAREDES EXTERNAS
-    // ========================================================
-
-    if (
-        colideComParedesExternas(
-            x,
-            z
-        )
-    ) {
+    if (colideComParedesExternas(x, z)) {
 
         return false;
     }
 
-
-    // ========================================================
-    // FOLHA DA PORTA PRINCIPAL
-    //
-    // A dobradica e (-0.70, 3.96), e a folha gira com
-    // o mesmo angulo usado em desenharPorta().
-    // ========================================================
-
+    // Folha da porta principal.
+    // A dobradica e (-0.70, 3.96) e o angulo e o mesmo usado
+    // em desenharPorta().
     if (
         colideComFolhaPorta(
             x,
@@ -634,115 +287,43 @@ bool posicaoCameraValida(float x, float z) {
         return false;
     }
 
-
-    // ========================================================
-    // PAREDES DO BANHEIRO
-    // ========================================================
-
-    if (
-        colideComParedesBanheiro(
-            x,
-            z
-        )
-    ) {
+    if (colideComParedesBanheiro(x, z)) {
 
         return false;
     }
 
-
-    // ========================================================
-    // PORTA DO BANHEIRO
-    // ========================================================
-
-    if (
-        colideComPortaBanheiro(
-            x,
-            z
-        )
-    ) {
+    if (colideComPortaBanheiro(x, z)) {
 
         return false;
     }
 
-
-    // ========================================================
-    // BALCAO
-    // ========================================================
-
-    if (
-        colideComBalcao(
-            x,
-            z
-        )
-    ) {
+    if (colideComRetangulo(x, z, BALCAO)) {
 
         return false;
     }
 
+    for (const RetanguloXZ& mesa : MESAS) {
 
-    // ========================================================
-    // MESAS
-    // ========================================================
+        if (colideComRetangulo(x, z, mesa)) {
 
-    if (
-        colideComMesas(
-            x,
-            z
-        )
-    ) {
+            return false;
+        }
+    }
+
+    if (colideComCadeiras(x, z)) {
 
         return false;
     }
 
-
-    // ========================================================
-    // CADEIRAS
-    // ========================================================
-
-    if (
-        colideComCadeiras(
-            x,
-            z
-        )
-    ) {
+    if (colideComRetangulo(x, z, VASO_SANITARIO)) {
 
         return false;
     }
 
-
-    // ========================================================
-    // VASO SANITARIO
-    // ========================================================
-
-    if (
-        colideComVasoSanitario(
-            x,
-            z
-        )
-    ) {
+    if (colideComRetangulo(x, z, PIA_BANHEIRO)) {
 
         return false;
     }
-
-
-    // ========================================================
-    // PIA
-    // ========================================================
-
-    if (
-        colideComPiaBanheiro(
-            x,
-            z
-        )
-    ) {
-
-        return false;
-    }
-
-
-    // ========================================================
-    // LIVRE
-    // ========================================================
 
     return true;
 }

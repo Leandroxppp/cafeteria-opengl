@@ -1,27 +1,19 @@
 #ifndef INTERACOES_H
 #define INTERACOES_H
 
-
-// Inicializa porta, cadeiras e iluminacao.
+// Inicializa portas, cadeiras e iluminacao.
 void inicializarInteracoes();
 
-
-// Atualiza as animacoes.
-void atualizarInteracoes();
-
+// Atualiza as animacoes de portas e cadeiras.
+// deltaTempo esta em segundos.
+void atualizarInteracoes(float deltaTempo);
 
 // Executa a interacao quando o jogador aperta E.
 void tentarInteragir();
 
-void alternarPortaBanheiro();
-
-float obterAnguloPortaBanheiro();
-
-bool jogadorPertoPortaBanheiro();
-
 
 // ============================================================
-// PORTA
+// PORTA PRINCIPAL
 // ============================================================
 
 float obterAnguloPorta();
@@ -29,11 +21,26 @@ float obterAnguloPorta();
 
 // ============================================================
 // CADEIRAS
+//
+// O layout de cada cadeira fica em interacoes.cpp. Renderizacao
+// e colisao consultam estes getters para nao duplicar posicoes.
 // ============================================================
 
-float obterDeslocamentoCadeira(
-    int indice
-);
+int quantidadeCadeiras();
+
+float obterCadeiraX(int indice);
+
+// Posicao Z atual (posicao original + deslocamento da animacao).
+float obterCadeiraZ(int indice);
+
+float obterAnguloCadeira(int indice);
+
+
+// ============================================================
+// PORTA DO BANHEIRO
+// ============================================================
+
+float obterAnguloPortaBanheiro();
 
 
 // ============================================================
@@ -41,6 +48,5 @@ float obterDeslocamentoCadeira(
 // ============================================================
 
 bool luzEstaLigada();
-
 
 #endif

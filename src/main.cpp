@@ -8,74 +8,75 @@
 #include "Interacoes/interacoes.h"
 #include "Renderizacao/renderizador.h"
 
-namespace {
+namespace { // namespace anonino o torna privado, sendo de uso exclusivo desse arquivo
 
-const float DELTA_MAXIMO = 0.05f;
+    const float DELTA_MAXIMO = 0.05f;
 
-void callbackTecla(
-    GLFWwindow* janela, int tecla, int, int acao, int) 
-{
+    void callbackTecla(
+        GLFWwindow* janela, int tecla, int, int acao, int) 
+    {
 
-    if (tecla == GLFW_KEY_ESCAPE && acao == GLFW_PRESS) {
+        if (tecla == GLFW_KEY_ESCAPE && acao == GLFW_PRESS) {
 
-        glfwSetWindowShouldClose(janela, GLFW_TRUE);
-        return;
+            glfwSetWindowShouldClose(janela, GLFW_TRUE);
+            return;
+        }
+
+        if (acao == GLFW_PRESS) {
+
+            teclaPressionada(tecla);
+        }
+
+        else if (acao == GLFW_RELEASE) {
+
+            teclaSolta(tecla);
+        }
     }
 
-    if (acao == GLFW_PRESS) {
+    // Com GLFW_CURSOR_DISABLED o GLFW entrega a posicao virtual do cursor
+    void callbackMouse(GLFWwindow*, double x, double y) {
 
-        teclaPressionada(tecla);
+        moverMouse(x, y);
     }
 
-    else if (acao == GLFW_RELEASE) {
+    void callbackFoco(GLFWwindow*, int focado) {
 
-        teclaSolta(tecla);
-    }
-}
+        // Evita teclas "presas" ao trocar de janela.
+        if (!focado) { // 0 se perdeu o foco
 
-// Com GLFW_CURSOR_DISABLED o GLFW entrega a posicao virtual do cursor
-void callbackMouse(GLFWwindow*, double x, double y) {
+            soltarTodasAsTeclas();
+        }
 
-    moverMouse(x, y);
-}
-
-void callbackFoco(GLFWwindow*, int focado) {
-
-    // Evita teclas "presas" ao trocar de janela.
-    if (!focado) { // 0 se perdeu o foco
-
-        soltarTodasAsTeclas();
+        redefinirMouse();
     }
 
-    redefinirMouse();
-}
+    void configurarEntrada(GLFWwindow* janela) {
 
-void configurarEntrada(GLFWwindow* janela) {
+        glfwSetKeyCallback(janela, callbackTecla);
+        glfwSetCursorPosCallback(janela, callbackMouse);
+        glfwSetWindowFocusCallback(janela, callbackFoco);
 
-    glfwSetKeyCallback(janela, callbackTecla);
-    glfwSetCursorPosCallback(janela, callbackMouse);
-    glfwSetWindowFocusCallback(janela, callbackFoco);
+        glfwSetInputMode(janela, GLFW_CURSOR, GLFW_CURSOR_DISABLED); // oculta o cursor
 
-    glfwSetInputMode(janela, GLFW_CURSOR, GLFW_CURSOR_DISABLED); // ocultar o cursor
+        redefinirMouse();
+    }
 
-    redefinirMouse();
-}
+    float calcularDeltaTempo(double& instanteAnterior) {
 
-float calcularDeltaTempo(double& instanteAnterior) {
+        const double instanteAtual = glfwGetTime();
 
-    const double instanteAtual = glfwGetTime();
+        const float delta =
+            static_cast<float>(instanteAtual - instanteAnterior);
 
-    const float delta =
-        static_cast<float>(instanteAtual - instanteAnterior);
+        instanteAnterior = instanteAtual;
 
-    instanteAnterior = instanteAtual;
-
-    // Evita passos grandes depois de uma pausa, que poderiam
-    // atravessar a colisao.
-    return std::min(delta, DELTA_MAXIMO);
-}
-
+        // Evita passos grandes depois de uma pausa, que poderiam
+        // atravessar a colisao.
+        return std::min(delta, DELTA_MAXIMO);
+    }
 } // namespace
+
+
 
 int main() {
 
@@ -98,7 +99,7 @@ int main() {
 
         const float deltaTempo = calcularDeltaTempo(instanteAnterior);
 
-        glfwPollEvents(); //processarEventos
+        glfwPollEvents(); //processa eventos
 
         atualizarControles(deltaTempo);
         atualizarInteracoes(deltaTempo);
@@ -107,8 +108,8 @@ int main() {
         glfwSwapBuffers(janela);
     }
 
-    glfwDestroyWindow(janela); // destroe a janela
-    glfwTerminate(); 
+    glfwDestroyWindow(janela); // destroi a janela
+    glfwTerminate();  // desliga o GLFW
 
     return 0;
 }
