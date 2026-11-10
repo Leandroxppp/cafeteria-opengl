@@ -35,6 +35,15 @@ void tentarMover(float deslocamentoX, float deslocamentoZ) {
     const float novoX = cameraX + deslocamentoX;
     const float novoZ = cameraZ + deslocamentoZ;
 
+    // Se uma porta ou cadeira em animacao atingiu a camera, deixa o
+    // jogador andar para fora em vez de ficar preso dentro dela.
+    if (!posicaoCameraValida(cameraX, cameraZ)) {
+
+        cameraX = novoX;
+        cameraZ = novoZ;
+        return;
+    }
+
     if (posicaoCameraValida(novoX, novoZ)) {
 
         cameraX = novoX;

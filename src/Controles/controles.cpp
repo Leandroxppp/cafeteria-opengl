@@ -10,7 +10,7 @@
 
 namespace { 
 
-    const float VELOCIDADE_MOVIMENTO = 3.6f;  // unidades por segundo
+    const float VELOCIDADE_MOVIMENTO = 2.0f;  // unidades por segundo
     const float VELOCIDADE_ROTACAO = 90.0f;   // graus por segundo
 
     bool teclas[GLFW_KEY_LAST + 1] = { false };
