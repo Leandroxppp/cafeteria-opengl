@@ -33,6 +33,11 @@ struct RetanguloXZ {
     float maxZ;
 };
 
+const RetanguloXZ JANELA = {
+    -6.00f, -5.88f,
+    0.50f,  3.50f
+};
+
 const RetanguloXZ BALCAO = {
     -4.99f, -2.21f,
     -3.04f, -2.26f
@@ -304,6 +309,11 @@ bool posicaoCameraValida(float x, float z) {
     }
 
     if (colideComRetangulo(x, z, PRATELEIRA)) {
+
+        return false;
+    }
+
+    if (colideComRetangulo(x, z, JANELA)) {
 
         return false;
     }
